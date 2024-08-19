@@ -20,92 +20,189 @@ language_code = "en"
 
 
 
-# List of trigger words for different functionalities
-trigger_words = ["quiz", "assessment", "project", "test", "oral assessment", "exam"]
+# Generate a unique session ID for each user session
+def generate_session_id():
+    return f"session_{datetime.datetime.now().timestamp()}"
 
-def detect_intent_text(project_id, agent_id, session_id, text, language_code):
-    client = dialogflow_cx.SessionsClient(credentials=credentials)
+# Function to create PDF
+def create_pdf(task_description, response_text, file_name, task_type):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"{task_type.capitalize()} / Assessment", ln=True, align='C')
+    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
+    pdf.ln(10)
+
+    # Adding a border and background color
+    pdf.set_fill_color(200, 220, 255)  # Light blue background
+    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
+
+    # Adding text with a slight indention
+    pdf.set_xy(10, 40)
+    pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
+
+    if task_type != "lesson plan":  # Add memo for all tasks except lesson plan
+        memo = create_memo(response_text)
+        pdf.ln(10)
+        pdf.set_xy(10, pdf.get_y())
+        pdf.multi_cell(0, 10, txt=f"{memo}")
+
+    pdf.output(file_name)
+
+# Function to detect intent using Dialogflow CX
+def detect_intent_text(client, project_id, agent_id, session_id, text, language_code="en"):
     session_path = f"projects/{project_id}/locations/global/agents/{agent_id}/sessions/{session_id}"
     text_input = dialogflow_cx.TextInput(text=text)
     query_input = dialogflow_cx.QueryInput(text=text_input, language_code=language_code)
     request = dialogflow_cx.DetectIntentRequest(session=session_path, query_input=query_input)
     response = client.detect_intent(request=request)
-    return response.query_result
+    return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
 
-def generate_task(task_type, subject, grade, num_questions, num_options, total_marks):
-    task_data = []
-    for i in range(num_questions):
-        question_text = f"Question {i+1} for {task_type}?"
-        options = [f"Option {j+1}" for j in range(num_options)]
-        correct_answer = random.choice(options)
-        explanation = f"Explanation for question {i+1}."
-        task_data.append({
-            "question": question_text,
-            "options": options,
-            "answer": correct_answer,
-            "explanation": explanation,
-            "marks": total_marks // num_questions
-        })
-    return task_data
+# Function to display messages with appropriate styling
+def display_message(sender, message):
+    if sender == "user":
+        st.markdown(f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-end;">'
+                    f'<div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
+                    f'{message}</div>'
+                    f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE USER ICON.png")}" '
+                    f'style="width: 40px; height: 40px; border-radius: 50%; margin-left: 10px;"></div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">'
+                    f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE LOGO FINAL.png")}" '
+                    f'style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">'
+                    f'<div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
+                    f'{message}</div></div>', unsafe_allow_html=True)
 
-def create_pdf(task_data, file_name, task_type):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    # Title
-    pdf.cell(200, 10, txt=f"{task_type.capitalize()} / Assessment", ln=True, align='C')
-    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
-    pdf.ln(10)
-    # Questions
-    for idx, question in enumerate(task_data):
-        pdf.multi_cell(0, 10, txt=f"Question {idx + 1}: {question['question']} ({question['marks']} marks)")
-        for option in question["options"]:
-            pdf.cell(200, 10, txt=f"- {option}", ln=True)
-        pdf.cell(200, 10, txt=f"Answer: {question['answer']}", ln=True)
-        pdf.cell(200, 10, txt=f"Explanation: {question['explanation']}", ln=True)
-        pdf.ln(5)
-    pdf.output(file_name)
+# Convert image to base64
+def img_to_base64(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
 
-def main():
-    st.title("Educational Task Generator")
-    # Tabs for different task types
-    tabs = st.tabs(["Quiz", "Assessment", "Project", "Test", "Oral Assessment", "Exam"])
-    task_types = ["quiz", "assessment", "project", "test", "oral assessment", "exam"]
-    # Initialize session state for chat history
+# Main chatbot function
+def chatbot():
+    # Initialize session state for the chatbot
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
-    # Display chat history
-    for chat_entry in st.session_state['chat_history']:
-        st.markdown(chat_entry['message'])
-    # Input text box for user interaction
-    user_input = st.text_input("You: ")
-    # Button to send user input to Dialogflow
-    if st.button("Enter"):
-        if user_input.strip():
-            response = detect_intent_text(project_id, agent_id, session_id, user_input, language_code)
-            response_text = response.response_messages[0].text.text[0]
-            # Add user input to chat history
-            st.session_state['chat_history'].append({"message": f"You: {user_input}"})
-            st.session_state['chat_history'].append({"message": f"Buddy: {response_text}"})
-            st.markdown(f"Buddy: {response_text}")
-    # Button to create PDF from the last chatbot response
-    if st.button("Create PDF"):
-        if st.session_state['chat_history']:
-            last_response = st.session_state['chat_history'][-1]['message']
-            if "Buddy: " in last_response:
-                last_response = last_response.replace("Buddy: ", "")
-            task_data = [{"question": last_response, "options": [], "answer": "", "explanation": "", "marks": 0}]
-            create_pdf(task_data, "last_response.pdf", "Chatbot Response")
-            with open("last_response.pdf", "rb") as f:
-                st.download_button(label="Download PDF", data=f.read(), file_name="last_response.pdf", mime="application/pdf")
-    # Button to clear chat history
-    if st.button("Clear Chat"):
-        st.session_state['chat_history'] = []
-    # Tabs logic
-    for tab, task_type in zip(tabs, task_types):
-        with tab:
-            st.write(f"This is the {task_type.capitalize()} tab.")
 
+    if 'session_id' not in st.session_state:
+        st.session_state['session_id'] = generate_session_id()
+
+    st.title("Chat with PHBEE 🐝")
+    st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
+
+    # Display introductory message if chat history is empty
+    if not st.session_state['chat_history']:
+        display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
+
+    user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
+    if st.button("Send"):
+        if user_input:
+            with st.spinner('Processing...'):
+                response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
+            display_message("user", user_input)
+            display_message("PHBEE", response)
+
+            # Update chat history
+            st.session_state['chat_history'].append({"sender": "user", "message": user_input})
+            st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
+
+    # Button to clear the chat
+    if st.button("Clear Chat"):
+        st.session_state['chat_history'] = []  # Clear chat history
+
+    # Display chat history
+    for chat in st.session_state['chat_history']:
+        if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
+            display_message(chat['sender'], chat['message'])
+        else:
+            st.error("Chat history contains invalid data.")
+
+def create_memo(response_text):
+    memo = "\nMemo:\n"
+    questions = response_text.split("\n")
+    for question in questions:
+        if "Answer:" in question:
+            memo += question + "\n"
+    return memo
+
+# Function to generate a task description
+def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
+    if task_type == "lesson plan":
+        return (
+            f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
+            f"{curriculum} curriculum. The lesson plan should cover term {num_questions_or_term} and week {total_marks_or_week}."
+        )
+    else:
+        return (
+            f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
+            f"{curriculum} curriculum. The task should include {num_questions_or_term} questions, each with 4 options, "
+            f"and the total marks should sum up to {total_marks_or_week}."
+        )
+
+# Main application logic
+def main():
+    st.sidebar.title("PHBEE Educational Tools")
+    menu = ["Chatbot", "Task Generator"]
+    choice = st.sidebar.selectbox("Select an Option", menu)
+
+    if choice == "Chatbot":
+        chatbot()
+    elif choice == "Task Generator":
+        st.subheader("Generate Educational Tasks")
+        task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
+        subject = st.text_input("Subject")
+        grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
+        curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
+
+        if task_type == "Lesson Plan":
+            term = st.slider("Term", 1, 4)
+            week = st.slider("Week", 1, 10)
+            num_questions_or_term = term
+            total_marks_or_week = week
+        else:
+            num_questions = st.slider("Number of Questions", 1, 100)
+            total_marks = st.slider("Total Marks", 1, 300)
+            num_questions_or_term = num_questions
+            total_marks_or_week = total_marks
+
+        if st.button("Generate"):
+            task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
+            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
+
+            # Create PDF
+            pdf_file_name = f"{task_type}_for_{subject}_Grade_{grade}.pdf"
+            create_pdf(task_description, response_text, pdf_file_name, task_type)
+
+            # Display the generated task and response
+            st.markdown(f"**Task Description:**\n\n{task_description}")
+            st.markdown(f"**Generated Task:**\n\n{response_text}")
+
+            # Display download buttons with colors aligned to the logo
+            pdf_button_color = "#FFCC00"  # A color matching your logo
+            st.markdown(f"""
+                <style>
+                .download-button {{
+                    background-color: {pdf_button_color};
+                    color: white;
+                    padding: 10px;
+                    text-align: center;
+                    font-size: 16px;
+                    margin: 10px 0;
+                    border-radius: 5px;
+                    border: none;
+                    cursor: pointer;
+                    display: inline-block;
+                }}
+                </style>
+                <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
+                <div class="download-button">📄 Download {task_type} PDF</div></a>
+            """, unsafe_allow_html=True)
+
+            if task_type != "lesson plan":
+                memo = create_memo(response_text)
+                st.markdown(f"**Memo:**\n\n{memo}")
+
+# Run the main function
 if __name__ == '__main__':
     main()
 
