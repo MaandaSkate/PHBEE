@@ -2,6 +2,7 @@ import os
 import streamlit as st
 import datetime
 import random
+import base64
 from fpdf import FPDF
 from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
