@@ -34,7 +34,7 @@ def initialize_firestore_client(key_path, project_id):
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
 language_code = "en"
-db = initialize_firestore_client(key_path, project_id)
+
 
 
 
