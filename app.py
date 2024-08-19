@@ -6,7 +6,9 @@ from fpdf import FPDF
 from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
 import json
-import base64
+import base64import firebase_admin
+from firebase_admin import credentials, firestore
+
 
 # Set the page configuration
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
