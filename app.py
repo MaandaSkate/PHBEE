@@ -14,7 +14,7 @@ from firebase_admin import credentials,firestore
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
 
 
-key_path = '/path/to/your/directory/PHBEECHATBOT.json'
+key_path = 'PHBEECHATBOT.json'
 
 if not os.path.exists(key_path):
     st.error("Service account key file not found. Please check the path.")
