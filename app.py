@@ -23,10 +23,6 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 credentials_info = st.secrets["google_service_account_key"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
-# Initialize Firebase
-cred = credentials.Certificate('path/to/your/serviceAccountKey.json')
-firebase_admin.initialize_app(cred)
-client = firestore.client()
 
 # Define the Dialogflow parameters
 project_id = "phoeb-426309"
