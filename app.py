@@ -8,7 +8,7 @@ from google.oauth2 import service_account
 import json
 import base64
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials,firestore
 
 # Set the page configuration
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
@@ -183,7 +183,7 @@ def main():
             total_marks_or_week = total_marks
 
         if st.button("Generate"):
-            task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
+            task_description = generate_task_description(task_type, subject, grade,curriculum,num_questions_or_term, total_marks_or_week)
             response_text = "Generated response text based on the task description."
             pdf_file_name = f"{task_type}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
             create_pdf(task_description, response_text, pdf_file_name, task_type)
