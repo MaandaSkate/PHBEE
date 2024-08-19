@@ -13,9 +13,6 @@ import json
 credentials_info = st.secrets["google_service_account_key"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
-# Set the page configuration
-st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
-
 # Initialize Dialogflow client
 def initialize_dialogflow_client(key_path):
     credentials = service_account.Credentials.from_service_account_file(key_path)
@@ -32,6 +29,8 @@ def initialize_firestore_client(key_path, project_id):
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
 language_code = "en"
+dialogflow_client = initialize_dialogflow_client("path/to/your/service_account_key.json")
+firestore_client = initialize_firestore_client("path/to/your/service_account_key.json", project_id)
 
 # Generate a unique session ID for each user session
 def generate_session_id():
@@ -151,7 +150,7 @@ def chatbot():
     if st.button("Send"):
         if user_input:
             with st.spinner('Processing...'):
-                response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
+                response = detect_intent_text(dialogflow_client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
             display_message("user", user_input)
             display_message("PHBEE", response)
 
@@ -168,30 +167,20 @@ def chatbot():
         if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
             display_message(chat['sender'], chat['message'])
         else:
-            st.error("Chat history contains invalid data.")
+            st.error("Error: Invalid chat history format.")
 
-# Main application logic
+# Main function to display the Streamlit app
 def main():
-    # Hide Streamlit style elements
-    hide_st_style = """
-                    <style>
-                    #MainMenu {visibility: hidden;}
-                    footer {visibility: hidden;}
-                    header {visibility: hidden;}
-                    </style>
-                    """
-    st.markdown(hide_st_style, unsafe_allow_html=True)
+    st.set_page_config(page_title="PHBEE", page_icon=":bee:", layout="wide")
+    st.sidebar.title("PHBEE Navigation")
+    app_mode = st.sidebar.selectbox("Choose App Mode", ["Chatbot", "Generate Task"])
 
-    st.sidebar.title("PHBEE Educational Tools")
-    menu = ["Chatbot", "Task Generator"]
-    choice = st.sidebar.selectbox("Select an Option", menu)
-
-    if choice == "Chatbot":
+    if app_mode == "Chatbot":
         chatbot()
-    elif choice == "Task Generator":
-        st.subheader("Generate Educational Tasks")
-        task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
-        subject = st.text_input("Subject")
+    elif app_mode == "Generate Task":
+        st.title("Generate Educational Task")
+        task_type = st.selectbox("Task Type", ["Assessment", "Project", "Test", "Exam", "Lesson Plan"])
+        subject = st.selectbox("Subject", ["Math", "Science", "English", "History", "Geography"])
         grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
         curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
 
@@ -209,7 +198,7 @@ def main():
         if st.button("Generate Task"):
             if subject and grade and curriculum:
                 task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-                response_text = detect_intent_text(client, project_id, agent_id, generate_session_id(), task_description, "en")
+                response_text = detect_intent_text(dialogflow_client, project_id, agent_id, st.session_state['session_id'], task_description, "en")
                 pdf_file_name = f"{task_type}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 create_pdf(task_description, response_text, pdf_file_name, task_type)
                 st.success("Task generated and PDF created!")
@@ -227,6 +216,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
 
 
 
