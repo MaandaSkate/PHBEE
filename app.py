@@ -1,8 +1,7 @@
 import os
+import base64
 import streamlit as st
 import datetime
-import random
-import base64
 from fpdf import FPDF
 from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
@@ -18,12 +17,14 @@ credentials = service_account.Credentials.from_service_account_info(credentials_
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
 
 # Initialize Dialogflow client
-def initialize_dialogflow_client(credentials):
+def initialize_dialogflow_client(key_path):
+    credentials = service_account.Credentials.from_service_account_file(key_path)
     client = dialogflow_cx.SessionsClient(credentials=credentials)
     return client
 
 # Create a Firestore client with explicit project ID
-def initialize_firestore_client(credentials, project_id):
+def initialize_firestore_client(key_path, project_id):
+    credentials = service_account.Credentials.from_service_account_file(key_path)
     client = firestore.Client(credentials=credentials, project=project_id)
     return client
 
@@ -32,12 +33,22 @@ project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
 language_code = "en"
 
-# Initialize Dialogflow client
-client = initialize_dialogflow_client(credentials)
-
 # Generate a unique session ID for each user session
 def generate_session_id():
     return f"session_{datetime.datetime.now().timestamp()}"
+
+# Function to convert image to base64
+def img_to_base64(image_path):
+    if not os.path.isfile(image_path):
+        st.error(f"Image file not found: {image_path}")
+        return ""
+    try:
+        with open(image_path, "rb") as img_file:
+            img_data = img_file.read()
+        return base64.b64encode(img_data).decode('utf-8')
+    except Exception as e:
+        st.error(f"An error occurred while reading the image: {e}")
+        return ""
 
 # Function to create PDF
 def create_pdf(task_description, response_text, file_name, task_type):
@@ -52,11 +63,11 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.set_fill_color(200, 220, 255)  # Light blue background
     pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
-    # Adding text with a slight indentation
+    # Adding text with a slight indention
     pdf.set_xy(10, 40)
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
 
-    if task_type.lower() != "lesson plan":  # Add memo for all tasks except lesson plan
+    if task_type != "lesson plan":  # Add memo for all tasks except lesson plan
         memo = create_memo(response_text)
         pdf.ln(10)
         pdf.set_xy(10, pdf.get_y())
@@ -73,44 +84,24 @@ def detect_intent_text(client, project_id, agent_id, session_id, text, language_
     response = client.detect_intent(request=request)
     return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
 
-# Define image paths
-user_icon_path = 'assets/PHBEE USER ICON.png'
-logo_path = 'assets/PHBEE LOGO FINAL.png'
-
-# Convert images to base64
-user_icon_base64 = img_to_base64(user_icon_path)
-logo_base64 = img_to_base64(logo_path)
-
-# Display images using base64
-if user_icon_base64:
-    st.markdown(
-        f'<img src="data:image/png;base64,{user_icon_base64}" style="width: 40px; height: 40px; border-radius: 50%;">',
-        unsafe_allow_html=True
-    )
-
-if logo_base64:
-    st.markdown(
-        f'<img src="data:image/png;base64,{logo_base64}" style="width: 40px; height: 40px; border-radius: 50%;">',
-        unsafe_allow_html=True
-    )
-
-
-
 # Function to display messages with appropriate styling
 def display_message(sender, message):
+    user_icon_base64 = img_to_base64("assets/PHBEE USER ICON.png")
+    logo_base64 = img_to_base64("assets/PHBEE LOGO FINAL.png")
+
     if sender == "user":
         st.markdown(
             f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-end;">'
             f'<div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
             f'{message}</div>'
-            f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE USER ICON.png")}" '
+            f'<img src="data:image/png;base64,{user_icon_base64}" '
             f'style="width: 40px; height: 40px; border-radius: 50%; margin-left: 10px;"></div>',
             unsafe_allow_html=True
         )
     else:
         st.markdown(
             f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">'
-            f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE LOGO FINAL.png")}" '
+            f'<img src="data:image/png;base64,{logo_base64}" '
             f'style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">'
             f'<div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
             f'{message}</div></div>',
@@ -128,7 +119,7 @@ def create_memo(response_text):
 
 # Function to generate a task description
 def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
-    if task_type.lower() == "lesson plan":
+    if task_type == "lesson plan":
         return (
             f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
             f"{curriculum} curriculum. The lesson plan should cover term {num_questions_or_term} and week {total_marks_or_week}."
@@ -198,32 +189,45 @@ def main():
     if choice == "Chatbot":
         chatbot()
     elif choice == "Task Generator":
-        st.title("Educational Task Generator")
-        task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Exam", "Lesson Plan"])
-
+        st.subheader("Generate Educational Tasks")
+        task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
         subject = st.text_input("Subject")
-        grade = st.slider("Grade", 1, 12)
+        grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
         curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
 
         if task_type == "Lesson Plan":
-            term = st.slider("Term", 1, 4)
-            week = st.slider("Week", 1, 10)
+            term = st.selectbox("Term", [1, 2, 3, 4])
+            week = st.selectbox("Week", range(1, 11))
             num_questions_or_term = term
             total_marks_or_week = week
         else:
-            num_questions = st.slider("Number of Questions", 1, 50)
-            total_marks = st.slider("Total Marks", 1, 100)
+            num_questions = st.slider("Number of Questions", min_value=1, max_value=50, value=5)
+            total_marks = st.slider("Total Marks", min_value=1, max_value=100, value=10)
             num_questions_or_term = num_questions
             total_marks_or_week = total_marks
 
         if st.button("Generate Task"):
-            task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-            response_text = "This is a generated response based on the task description."
-            create_pdf(task_description, response_text, f"{task_type}_Task.pdf", task_type)
-            st.success(f"Task generated successfully! Download the PDF file here: [Download PDF](/{task_type}_Task.pdf)")
+            if subject and grade and curriculum:
+                task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
+                response_text = detect_intent_text(client, project_id, agent_id, generate_session_id(), task_description, "en")
+                pdf_file_name = f"{task_type}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_pdf(task_description, response_text, pdf_file_name, task_type)
+                st.success("Task generated and PDF created!")
+
+                # Provide download link for the PDF
+                with open(pdf_file_name, "rb") as pdf_file:
+                    st.download_button(
+                        label="Download PDF",
+                        data=pdf_file,
+                        file_name=pdf_file_name,
+                        mime="application/pdf"
+                    )
+            else:
+                st.error("Please fill in all the required fields.")
 
 if __name__ == "__main__":
     main()
+
 
 
 
