@@ -30,7 +30,7 @@ def initialize_firestore_client(key_path, project_id):
     return client
 
 # Initialize clients
-client = initialize_dialogflow_client(key_path)
+
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
 language_code = "en"
