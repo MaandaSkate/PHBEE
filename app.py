@@ -59,25 +59,39 @@ def detect_intent_text(client, project_id, agent_id, session_id, text, language_
     response = client.detect_intent(request=request)
     return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
 
+
+
+# Function to convert image to base64
+def img_to_base64(image_path):
+    if not os.path.exists(image_path):
+        st.error(f"Image file not found: {image_path}")
+        return ""
+    with open(image_path, "rb") as img_file:
+        img_data = img_file.read()
+    return base64.b64encode(img_data).decode('utf-8')
+
 # Function to display messages with appropriate styling
 def display_message(sender, message):
     if sender == "user":
-        st.markdown(f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-end;">'
-                    f'<div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
-                    f'{message}</div>'
-                    f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE USER ICON.png")}" '
-                    f'style="width: 40px; height: 40px; border-radius: 50%; margin-left: 10px;"></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-end;">'
+            f'<div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
+            f'{message}</div>'
+            f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE USER ICON.png")}" '
+            f'style="width: 40px; height: 40px; border-radius: 50%; margin-left: 10px;"></div>',
+            unsafe_allow_html=True
+        )
     else:
-        st.markdown(f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">'
-                    f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE LOGO FINAL.png")}" '
-                    f'style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">'
-                    f'<div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
-                    f'{message}</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">'
+            f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE LOGO FINAL.png")}" '
+            f'style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">'
+            f'<div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
+            f'{message}</div></div>',
+            unsafe_allow_html=True
+        )
 
-# Convert image to base64
-def img_to_base64(image_path):
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
+
 
 # Main chatbot function
 def chatbot():
