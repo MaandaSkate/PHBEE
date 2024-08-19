@@ -6,7 +6,8 @@ from fpdf import FPDF
 from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
 import json
-import base64import firebase_admin
+import base64
+import firebase_admin
 from firebase_admin import credentials, firestore
 
 
