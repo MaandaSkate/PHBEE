@@ -6,18 +6,35 @@ import base64
 from fpdf import FPDF
 from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
+import firebase_admin
+from firebase_admin import credentials, firestore
 import json
 
 # Load credentials from Streamlit secrets
 credentials_info = st.secrets["google_service_account_key"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
+# Set the page configuration
+st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
 
-# Define the Dialogflow parameters
+# Initialize Dialogflow client
+def initialize_dialogflow_client(key_path):
+    credentials = service_account.Credentials.from_service_account_file(key_path)
+    client = dialogflow_cx.SessionsClient(credentials=credentials)
+    return client
+
+# Create a Firestore client with explicit project ID
+def initialize_firestore_client(key_path, project_id):
+    credentials = service_account.Credentials.from_service_account_file(key_path)
+    client = firestore.Client(credentials=credentials, project=project_id)
+    return client
+
+# Initialize clients
+client = initialize_dialogflow_client(key_path)
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
-session_id = "123456789"
 language_code = "en"
+db = initialize_firestore_client(key_path, project_id)
 
 
 
@@ -156,6 +173,16 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
 
 # Main application logic
 def main():
+    # Hide Streamlit style elements
+    hide_st_style = """
+                    <style>
+                    #MainMenu {visibility: hidden;}
+                    footer {visibility: hidden;}
+                    header {visibility: hidden;}
+                    </style>
+                    """
+    st.markdown(hide_st_style, unsafe_allow_html=True)
+
     st.sidebar.title("PHBEE Educational Tools")
     menu = ["Chatbot", "Task Generator"]
     choice = st.sidebar.selectbox("Select an Option", menu)
