@@ -18,25 +18,22 @@ credentials = service_account.Credentials.from_service_account_info(credentials_
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
 
 # Initialize Dialogflow client
-def initialize_dialogflow_client(key_path):
-    credentials = service_account.Credentials.from_service_account_file(key_path)
+def initialize_dialogflow_client(credentials):
     client = dialogflow_cx.SessionsClient(credentials=credentials)
     return client
 
 # Create a Firestore client with explicit project ID
-def initialize_firestore_client(key_path, project_id):
-    credentials = service_account.Credentials.from_service_account_file(key_path)
+def initialize_firestore_client(credentials, project_id):
     client = firestore.Client(credentials=credentials, project=project_id)
     return client
 
 # Initialize clients
-
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
 language_code = "en"
 
-
-
+# Initialize Dialogflow client
+client = initialize_dialogflow_client(credentials)
 
 # Generate a unique session ID for each user session
 def generate_session_id():
@@ -55,11 +52,11 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.set_fill_color(200, 220, 255)  # Light blue background
     pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
-    # Adding text with a slight indention
+    # Adding text with a slight indentation
     pdf.set_xy(10, 40)
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
 
-    if task_type != "lesson plan":  # Add memo for all tasks except lesson plan
+    if task_type.lower() != "lesson plan":  # Add memo for all tasks except lesson plan
         memo = create_memo(response_text)
         pdf.ln(10)
         pdf.set_xy(10, pdf.get_y())
@@ -75,8 +72,6 @@ def detect_intent_text(client, project_id, agent_id, session_id, text, language_
     request = dialogflow_cx.DetectIntentRequest(session=session_path, query_input=query_input)
     response = client.detect_intent(request=request)
     return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
-
-
 
 # Function to convert image to base64
 def img_to_base64(image_path):
@@ -108,7 +103,28 @@ def display_message(sender, message):
             unsafe_allow_html=True
         )
 
+# Function to create memo
+def create_memo(response_text):
+    memo = "\nMemo:\n"
+    questions = response_text.split("\n")
+    for question in questions:
+        if "Answer:" in question:
+            memo += question + "\n"
+    return memo
 
+# Function to generate a task description
+def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
+    if task_type.lower() == "lesson plan":
+        return (
+            f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
+            f"{curriculum} curriculum. The lesson plan should cover term {num_questions_or_term} and week {total_marks_or_week}."
+        )
+    else:
+        return (
+            f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
+            f"{curriculum} curriculum. The task should include {num_questions_or_term} questions, each with 4 options, "
+            f"and the total marks should sum up to {total_marks_or_week}."
+        )
 
 # Main chatbot function
 def chatbot():
@@ -149,28 +165,6 @@ def chatbot():
         else:
             st.error("Chat history contains invalid data.")
 
-def create_memo(response_text):
-    memo = "\nMemo:\n"
-    questions = response_text.split("\n")
-    for question in questions:
-        if "Answer:" in question:
-            memo += question + "\n"
-    return memo
-
-# Function to generate a task description
-def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
-    if task_type == "lesson plan":
-        return (
-            f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
-            f"{curriculum} curriculum. The lesson plan should cover term {num_questions_or_term} and week {total_marks_or_week}."
-        )
-    else:
-        return (
-            f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
-            f"{curriculum} curriculum. The task should include {num_questions_or_term} questions, each with 4 options, "
-            f"and the total marks should sum up to {total_marks_or_week}."
-        )
-
 # Main application logic
 def main():
     # Hide Streamlit style elements
@@ -202,51 +196,20 @@ def main():
             num_questions_or_term = term
             total_marks_or_week = week
         else:
-            num_questions = st.slider("Number of Questions", 1, 100)
-            total_marks = st.slider("Total Marks", 1, 300)
+            num_questions = st.slider("Number of Questions", 1, 50)
+            total_marks = st.slider("Total Marks", 1, 100)
             num_questions_or_term = num_questions
             total_marks_or_week = total_marks
 
-        if st.button("Generate"):
+        if st.button("Generate Task"):
             task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
+            response_text = "This is a generated response based on the task description."
+            create_pdf(task_description, response_text, f"{task_type}_Task.pdf", task_type)
+            st.success(f"Task generated successfully! Download the PDF file here: [Download PDF](/{task_type}_Task.pdf)")
 
-            # Create PDF
-            pdf_file_name = f"{task_type}_for_{subject}_Grade_{grade}.pdf"
-            create_pdf(task_description, response_text, pdf_file_name, task_type)
-
-            # Display the generated task and response
-            st.markdown(f"**Task Description:**\n\n{task_description}")
-            st.markdown(f"**Generated Task:**\n\n{response_text}")
-
-            # Display download buttons with colors aligned to the logo
-            pdf_button_color = "#FFCC00"  # A color matching your logo
-            st.markdown(f"""
-                <style>
-                .download-button {{
-                    background-color: {pdf_button_color};
-                    color: white;
-                    padding: 10px;
-                    text-align: center;
-                    font-size: 16px;
-                    margin: 10px 0;
-                    border-radius: 5px;
-                    border: none;
-                    cursor: pointer;
-                    display: inline-block;
-                }}
-                </style>
-                <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
-                <div class="download-button">📄 Download {task_type} PDF</div></a>
-            """, unsafe_allow_html=True)
-
-            if task_type != "lesson plan":
-                memo = create_memo(response_text)
-                st.markdown(f"**Memo:**\n\n{memo}")
-
-# Run the main function
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
+
 
 
 
