@@ -6,31 +6,28 @@ from fpdf import FPDF
 from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
 import firebase_admin
-from firebase_admin import credentials, firestore
-import json
+from firebase_admin import firestore
 
 # Load credentials from Streamlit secrets
 credentials_info = st.secrets["google_service_account_key"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
 # Initialize Dialogflow client
-def initialize_dialogflow_client(key_path):
-    credentials = service_account.Credentials.from_service_account_file(key_path)
+def initialize_dialogflow_client(credentials):
     client = dialogflow_cx.SessionsClient(credentials=credentials)
     return client
 
-# Create a Firestore client with explicit project ID
-def initialize_firestore_client(key_path, project_id):
-    credentials = service_account.Credentials.from_service_account_file(key_path)
-    client = firestore.Client(credentials=credentials, project=project_id)
+# Initialize Firestore client
+def initialize_firestore_client(credentials):
+    firebase_admin.initialize_app(credentials)
+    client = firestore.client()
     return client
 
 # Initialize clients
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
-language_code = "en"
-dialogflow_client = initialize_dialogflow_client("path/to/your/service_account_key.json")
-firestore_client = initialize_firestore_client("path/to/your/service_account_key.json", project_id)
+dialogflow_client = initialize_dialogflow_client(credentials)
+firestore_client = initialize_firestore_client(credentials)
 
 # Generate a unique session ID for each user session
 def generate_session_id():
@@ -62,7 +59,7 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.set_fill_color(200, 220, 255)  # Light blue background
     pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
-    # Adding text with a slight indention
+    # Adding text with a slight indentation
     pdf.set_xy(10, 40)
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
 
@@ -187,32 +184,21 @@ def main():
         if task_type == "Lesson Plan":
             term = st.selectbox("Term", [1, 2, 3, 4])
             week = st.selectbox("Week", range(1, 11))
-            num_questions_or_term = term
-            total_marks_or_week = week
+            if st.button("Generate Task"):
+                task_description = generate_task_description(task_type, subject, grade, curriculum, term, week)
+                response_text = detect_intent_text(dialogflow_client, project_id, agent_id, generate_session_id(), task_description, "en")
+                file_name = f"{task_type}_{subject}_{grade}_{curriculum}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+                create_pdf(task_description, response_text, file_name, task_type)
+                st.download_button("Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime="application/pdf")
         else:
-            num_questions = st.slider("Number of Questions", min_value=1, max_value=50, value=5)
-            total_marks = st.slider("Total Marks", min_value=1, max_value=100, value=10)
-            num_questions_or_term = num_questions
-            total_marks_or_week = total_marks
-
-        if st.button("Generate Task"):
-            if subject and grade and curriculum:
-                task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-                response_text = detect_intent_text(dialogflow_client, project_id, agent_id, st.session_state['session_id'], task_description, "en")
-                pdf_file_name = f"{task_type}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                create_pdf(task_description, response_text, pdf_file_name, task_type)
-                st.success("Task generated and PDF created!")
-
-                # Provide download link for the PDF
-                with open(pdf_file_name, "rb") as pdf_file:
-                    st.download_button(
-                        label="Download PDF",
-                        data=pdf_file,
-                        file_name=pdf_file_name,
-                        mime="application/pdf"
-                    )
-            else:
-                st.error("Please fill in all the required fields.")
+            num_questions = st.slider("Number of Questions", min_value=1, max_value=20)
+            total_marks = st.slider("Total Marks", min_value=1, max_value=100)
+            if st.button("Generate Task"):
+                task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions, total_marks)
+                response_text = detect_intent_text(dialogflow_client, project_id, agent_id, generate_session_id(), task_description, "en")
+                file_name = f"{task_type}_{subject}_{grade}_{curriculum}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+                create_pdf(task_description, response_text, file_name, task_type)
+                st.download_button("Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime="application/pdf")
 
 if __name__ == "__main__":
     main()
