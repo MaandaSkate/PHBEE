@@ -7,27 +7,35 @@ from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
 import firebase_admin
 from firebase_admin import firestore
+from firebase_admin import credentials, firestore
 
+# Set the page configuration
+st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
+
+key_path = 'PHBEECHATBOT.json'
 # Load credentials from Streamlit secrets
 credentials_info = st.secrets["google_service_account_key"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
-# Initialize Dialogflow client
-def initialize_dialogflow_client(credentials):
+
+def initialize_dialogflow_client(key_path):
+    credentials = service_account.Credentials.from_service_account_file(key_path)
     client = dialogflow_cx.SessionsClient(credentials=credentials)
     return client
 
-# Initialize Firestore client
-def initialize_firestore_client(credentials):
-    firebase_admin.initialize_app(credentials)
-    client = firestore.client()
-    return client
+def initialize_firebase(key_path):
+    cred = credentials.Certificate(key_path)
+    if not firebase_admin._apps:  # Check if Firebase has already been initialized
+        firebase_admin.initialize_app(cred)
+    return firestore.client()
 
-# Initialize clients
+client = initialize_dialogflow_client(key_path)
+db = initialize_firebase(key_path)
+
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
-dialogflow_client = initialize_dialogflow_client(credentials)
-firestore_client = initialize_firestore_client(credentials)
+language_code = "en"
+
 
 # Generate a unique session ID for each user session
 def generate_session_id():
