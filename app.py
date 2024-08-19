@@ -73,26 +73,27 @@ def detect_intent_text(client, project_id, agent_id, session_id, text, language_
     response = client.detect_intent(request=request)
     return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
 
+# Define image paths
+user_icon_path = 'assets/PHBEE USER ICON.png'
+logo_path = 'assets/PHBEE LOGO FINAL.png'
 
-# Function to convert image to base64
-def img_to_base64(image_path):
-    if not os.path.exists(image_path):
-        st.error(f"Image file not found: {image_path}")
-        return ""
-    try:
-        with open(image_path, "rb") as img_file:
-            img_data = img_file.read()
-        return base64.b64encode(img_data).decode('utf-8')
-    except Exception as e:
-        st.error(f"An error occurred while reading the image: {e}")
-        return ""
+# Convert images to base64
+user_icon_base64 = img_to_base64(user_icon_path)
+logo_base64 = img_to_base64(logo_path)
 
-image_base64 = img_to_base64('/content/PHBEE USER ICON.png')
-if image_base64:
+# Display images using base64
+if user_icon_base64:
     st.markdown(
-        f'<img src="data:image/png;base64,{image_base64}" style="width: 40px; height: 40px; border-radius: 50%;">',
+        f'<img src="data:image/png;base64,{user_icon_base64}" style="width: 40px; height: 40px; border-radius: 50%;">',
         unsafe_allow_html=True
     )
+
+if logo_base64:
+    st.markdown(
+        f'<img src="data:image/png;base64,{logo_base64}" style="width: 40px; height: 40px; border-radius: 50%;">',
+        unsafe_allow_html=True
+    )
+
 
 
 # Function to display messages with appropriate styling
