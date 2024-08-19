@@ -182,44 +182,15 @@ def main():
 
         if st.button("Generate"):
             task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
+            response_text = detect_intent_text(client, project_id, agent_id, generate_session_id(), task_description, "en")
+            file_name = f"{task_type}_{subject}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+            create_pdf(task_description, response_text, file_name, task_type)
+            st.success("Task generated and PDF created successfully!")
+            st.download_button("Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime="application/pdf")
 
-            # Create PDF
-            pdf_file_name = f"{task_type}_for_{subject}_Grade_{grade}.pdf"
-            create_pdf(task_description, response_text, pdf_file_name, task_type)
-
-            # Display the generated task and response
-            st.markdown(f"**Task Description:**\n\n{task_description}")
-            st.markdown(f"**Generated Task:**\n\n{response_text}")
-
-            # Display download buttons with colors aligned to the logo
-            pdf_button_color = "#FFCC00"  # A color matching your logo
-            st.markdown(f"""
-                <style>
-                .download-button {{
-                    background-color: {pdf_button_color};
-                    color: white;
-                    padding: 10px;
-                    text-align: center;
-                    font-size: 16px;
-                    margin: 10px 0;
-                    border-radius: 5px;
-                    border: none;
-                    cursor: pointer;
-                    display: inline-block;
-                }}
-                </style>
-                <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
-                <div class="download-button">📄 Download {task_type} PDF</div></a>
-            """, unsafe_allow_html=True)
-
-            if task_type != "lesson plan":
-                memo = create_memo(response_text)
-                st.markdown(f"**Memo:**\n\n{memo}")
-
-# Run the main function
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
+
 
 
 
