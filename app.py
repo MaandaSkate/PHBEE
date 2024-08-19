@@ -14,7 +14,7 @@ from firebase_admin import credentials,firestore
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
 
 # Path to your service account key file
-key_path = '/content/PHBEECHATBOT.json'
+key_path = 'PHBEECHATBOT.json'
 
 # Initialize Dialogflow client
 def initialize_dialogflow_client(key_path):
