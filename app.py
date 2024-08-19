@@ -32,6 +32,10 @@ language_code = "en"
 
 
 
+def img_to_base64(image_path):
+    with open(image_path, "rb") as img_file:
+        img_data = img_file.read()
+    return base64.b64encode(img_data).decode('utf-8')
 
 # Generate a unique session ID for each user session
 def generate_session_id():
@@ -86,10 +90,6 @@ def display_message(sender, message):
                     f'<div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
                     f'{message}</div></div>', unsafe_allow_html=True)
 
-def img_to_base64(image_path):
-    with open(image_path, "rb") as img_file:
-        img_data = img_file.read()
-    return base64.b64encode(img_data).decode('utf-8')
 
 # Function to create a memo
 def create_memo(response_text):
