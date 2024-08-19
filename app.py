@@ -10,7 +10,6 @@ import base64
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-
 # Set the page configuration
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
 
@@ -221,5 +220,6 @@ def main():
 # Run the main function
 if __name__ == '__main__':
     main()
+
 
 
