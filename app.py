@@ -15,6 +15,28 @@ footer {visibility: hidden;}
 header {visibility: hidden;}
 </style>
 """
+
+key_path = 'PHBEECHATBOT.json'
+
+if not os.path.exists(key_path):
+    st.error("Service account key file not found. Please check the path.")
+else:
+    client = initialize_dialogflow_client(key_path)
+    db = initialize_firestore_client(key_path, project_id)
+
+
+# Initialize Dialogflow client
+def initialize_dialogflow_client(key_path):
+    credentials = service_account.Credentials.from_service_account_file(key_path)
+    client = dialogflow_cx.SessionsClient(credentials=credentials)
+    return client
+
+# Create a Firestore client with explicit project ID
+def initialize_firestore_client(key_path, project_id):
+    credentials = service_account.Credentials.from_service_account_file(key_path)
+    client = firestore.Client(credentials=credentials, project=project_id)
+    return client
+
 st.markdown(hide_st_style, unsafe_allow_html=True)
 # Load credentials from Streamlit secrets
 credentials_info = st.secrets["google_service_account_key"]
