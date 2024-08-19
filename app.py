@@ -56,7 +56,7 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.set_xy(10, 40)
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
 
-    if task_type != "lesson plan":  # Add memo for all tasks except lesson plan
+    if task_type.lower() != "lesson plan":  # Add memo for all tasks except lesson plan
         memo = create_memo(response_text)
         pdf.ln(10)
         pdf.set_xy(10, pdf.get_y())
@@ -76,17 +76,19 @@ def detect_intent_text(client, project_id, agent_id, session_id, text, language_
 # Function to display messages with appropriate styling
 def display_message(sender, message):
     if sender == "user":
-        st.markdown(f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-end;">'
-                    f'<div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
-                    f'{message}</div>'
-                    f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE USER ICON.png")}" '
-                    f'style="width: 40px; height: 40px; border-radius: 50%; margin-left: 10px;"></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-end;">'
+            f'<div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
+            f'{message}</div>'
+            f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE USER ICON.png")}" '
+            f'style="width: 40px; height: 40px; border-radius: 50%; margin-left: 10px;"></div>', unsafe_allow_html=True)
     else:
-        st.markdown(f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">'
-                    f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE LOGO FINAL.png")}" '
-                    f'style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">'
-                    f'<div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
-                    f'{message}</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">'
+            f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE LOGO FINAL.png")}" '
+            f'style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">'
+            f'<div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
+            f'{message}</div></div>', unsafe_allow_html=True)
 
 # Convert image to base64
 def img_to_base64(image_path):
@@ -142,7 +144,7 @@ def create_memo(response_text):
 
 # Function to generate a task description
 def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
-    if task_type == "lesson plan":
+    if task_type.lower() == "lesson plan":
         return (
             f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
             f"{curriculum} curriculum. The lesson plan should cover term {num_questions_or_term} and week {total_marks_or_week}."
@@ -169,7 +171,7 @@ def main():
         grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
         curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
 
-        if task_type == "Lesson Plan":
+        if task_type.lower() == "lesson plan":
             term = st.slider("Term", 1, 4)
             week = st.slider("Week", 1, 10)
             num_questions_or_term = term
@@ -182,14 +184,14 @@ def main():
 
         if st.button("Generate"):
             task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-            response_text = detect_intent_text(client, project_id, agent_id, generate_session_id(), task_description, "en")
-            file_name = f"{task_type}_{subject}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
-            create_pdf(task_description, response_text, file_name, task_type)
-            st.success("Task generated and PDF created successfully!")
-            st.download_button("Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime="application/pdf")
+            response_text = "Generated response text based on the task description."
+            pdf_file_name = f"{task_type}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            create_pdf(task_description, response_text, pdf_file_name, task_type)
+            st.success(f"Task and PDF generated successfully! [Download PDF](/{pdf_file_name})")
 
 if __name__ == "__main__":
     main()
+
 
 
 
