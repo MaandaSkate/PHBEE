@@ -31,11 +31,12 @@ session_id = "123456789"
 language_code = "en"
 
 
-
 def img_to_base64(image_path):
+    image_path = os.path.join("assets", image_path)  # Adjust path to the 'assets' directory
     with open(image_path, "rb") as img_file:
         img_data = img_file.read()
     return base64.b64encode(img_data).decode('utf-8')
+
 
 # Generate a unique session ID for each user session
 def generate_session_id():
@@ -81,11 +82,11 @@ def display_message(sender, message):
         st.markdown(f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-end;">'
                     f'<div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
                     f'{message}</div>'
-                    f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE USER ICON.png")}" '
+                    f'<img src="data:image/png;base64,{img_to_base64("PHBEE USER ICON.png")}" '
                     f'style="width: 40px; height: 40px; border-radius: 50%; margin-left: 10px;"></div>', unsafe_allow_html=True)
     else:
         st.markdown(f'<div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">'
-                    f'<img src="data:image/png;base64,{img_to_base64("/content/PHBEE LOGO FINAL.png")}" '
+                    f'<img src="data:image/png;base64,{img_to_base64("PHBEE LOGO FINAL.png")}" '
                     f'style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">'
                     f'<div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">'
                     f'{message}</div></div>', unsafe_allow_html=True)
