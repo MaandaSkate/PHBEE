@@ -1,0 +1,9 @@
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+
+# Ignore service account key file
+PHBEECHATBOT.json
+
+# Ignore virtual environment directory (if you have one)
+venv/
