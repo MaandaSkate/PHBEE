@@ -184,10 +184,11 @@ def main():
     if choice == "Chatbot":
         chatbot()
     elif choice == "Task Generator":
-        st.subheader("Generate Educational Tasks")
-        task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
+        st.title("Educational Task Generator")
+        task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Exam", "Lesson Plan"])
+
         subject = st.text_input("Subject")
-        grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
+        grade = st.slider("Grade", 1, 12)
         curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
 
         if task_type == "Lesson Plan":
@@ -209,6 +210,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
