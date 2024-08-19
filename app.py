@@ -46,11 +46,19 @@ else:
 
 def img_to_base64(image_path):
     try:
+        # Ensure the image path is valid
+        if not os.path.isfile(image_path):
+            raise FileNotFoundError(f"The file {image_path} does not exist.")
+        
         with open(image_path, "rb") as img_file:
             img_data = img_file.read()
         return base64.b64encode(img_data).decode('utf-8')
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        st.error(f"Error: {str(e)}")
         # Return a placeholder image if file is not found
+        return base64.b64encode(b'').decode('utf-8')  # Placeholder for missing image
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {str(e)}")
         return base64.b64encode(b'').decode('utf-8')  # Placeholder for missing image
 
 def generate_session_id():
