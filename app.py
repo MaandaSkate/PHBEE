@@ -198,7 +198,7 @@ def main():
 
         if st.button("Generate Task"):
             task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-            response_text = "Here will be the generated content for the task."
+            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
             file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
             create_pdf(task_description, response_text, file_name, task_type)
             st.success(f"Task generated and saved as {file_name}.")
