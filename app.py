@@ -9,6 +9,9 @@ from google.cloud import firestore
 import json
 import base64
 
+# Set the page configuration
+st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
+
 # Hide Streamlit style elements
 hide_st_style = """
 <style>
