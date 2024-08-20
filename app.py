@@ -5,6 +5,7 @@ import random
 from fpdf import FPDF
 from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx, firestore
 from google.oauth2 import service_account
+from google.cloud import firestore
 import json
 import base64
 
@@ -19,30 +20,38 @@ header {visibility: hidden;}
 
 st.markdown(hide_st_style, unsafe_allow_html=True)
 
-# Define the path to the service account key file
-key_path = 'PHBEECHATBOT.json'
+import os
+import streamlit as st
+from google.oauth2 import service_account
+from google.cloud import dialogflowcx_v3 as dialogflow_cx
+from google.cloud import firestore
+
+# Load credentials from Streamlit secrets
+credentials_info = st.secrets["google_service_account_key"]
+credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
 # Function to initialize Dialogflow client
-def initialize_dialogflow_client(key_path):
-    credentials = service_account.Credentials.from_service_account_file(key_path)
+def initialize_dialogflow_client(credentials):
     client = dialogflow_cx.SessionsClient(credentials=credentials)
     return client
 
 # Function to initialize Firestore client
-def initialize_firestore_client(key_path, project_id):
-    credentials = service_account.Credentials.from_service_account_file(key_path)
+def initialize_firestore_client(credentials, project_id):
     client = firestore.Client(credentials=credentials, project=project_id)
     return client
 
-# Initialize clients if key_path exists
-if not os.path.exists(key_path):
-    st.error("Service account key file not found. Please check the path.")
-else:
-    client = initialize_dialogflow_client(key_path)
-    project_id = "phoeb-426309"
-    agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
-    language_code = "en"
-    db = initialize_firestore_client(key_path, project_id)
+# Define the Dialogflow parameters
+project_id = "phoeb-426309"
+agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
+session_id = "123456789"
+language_code = "en"
+
+# Initialize clients
+client = initialize_dialogflow_client(credentials)
+db = initialize_firestore_client(credentials, project_id)
+
+# You can now use `client` to interact with Dialogflow and `db` to interact with Firestore
+
 
 def img_to_base64(image_path):
     try:
