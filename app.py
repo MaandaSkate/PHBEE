@@ -236,6 +236,7 @@ def main():
             num_questions_or_term = num_questions
             total_marks_or_week = total_marks
 
+
 	if st.button("Generate"):
 	    # Generate the task description based on the provided inputs
 	    task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
@@ -256,26 +257,26 @@ def main():
 	
 	    # Generate the base64-encoded string of the PDF file
 	    with open(pdf_file_name, "rb") as pdf_file:
-		pdf_base64 = base64.b64encode(pdf_file.read()).decode()
+	        pdf_base64 = base64.b64encode(pdf_file.read()).decode()
 	
 	    # Create a styled download button
 	    st.markdown(f"""
-		<style>
-		.download-button {{
-		    background-color: {pdf_button_color};
-		    color: white;
-		    padding: 10px;
-		    text-align: center;
-		    font-size: 16px;
-		    margin: 10px 0;
-		    border-radius: 5px;
-		    border: none;
-		    cursor: pointer;
-		    display: inline-block;
-		}}
-		</style>
-		<a href="data:application/octet-stream;base64,{pdf_base64}" download="{pdf_file_name}">
-		<div class="download-button">📄 Download {task_type} PDF</div></a>
+	        <style>
+	        .download-button {{
+	            background-color: {pdf_button_color};
+	            color: white;
+	            padding: 10px;
+	            text-align: center;
+	            font-size: 16px;
+	            margin: 10px 0;
+	            border-radius: 5px;
+	            border: none;
+	            cursor: pointer;
+	            display: inline-block;
+	        }}
+	        </style>
+	        <a href="data:application/octet-stream;base64,{pdf_base64}" download="{pdf_file_name}">
+	        <div class="download-button">📄 Download {task_type} PDF</div></a>
 	    """, unsafe_allow_html=True)
 
 		
