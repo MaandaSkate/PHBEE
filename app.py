@@ -242,7 +242,7 @@ def main():
             st.download_button(label="Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime='application/pdf')
 
 if __name__ == "__main__":
-    main())
+    main()
 
 
 
