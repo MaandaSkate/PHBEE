@@ -236,26 +236,49 @@ def main():
             num_questions_or_term = num_questions
             total_marks_or_week = total_marks
 
-        if st.button("Generate Task"):
-            # Clear chat history for a fresh response
-            st.session_state['chat_history'] = []
+		if st.button("Generate"):
+		    # Generate the task description based on the provided inputs
+		    task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
+		
+		    # Get the response from the AI model
+		    response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
+		
+		    # Create a PDF with the task and the response
+		    pdf_file_name = f"{task_type}_for_{subject}_Grade_{grade}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+		    create_pdf(task_description, response_text, pdf_file_name, task_type)
+		
+		    # Display the task description and the generated task
+		    st.markdown(f"**Task Description:**\n\n{task_description}")
+		    st.markdown(f"**Generated Task:**\n\n{response_text}")
+		
+		    # Set up the color for the download button
+		    pdf_button_color = "#FFCC00"  # Adjust this color to match your logo
+		
+		    # Generate the base64-encoded string of the PDF file
+		    with open(pdf_file_name, "rb") as pdf_file:
+		        pdf_base64 = base64.b64encode(pdf_file.read()).decode()
+		
+		    # Create a styled download button
+		    st.markdown(f"""
+		        <style>
+		        .download-button {{
+		            background-color: {pdf_button_color};
+		            color: white;
+		            padding: 10px;
+		            text-align: center;
+		            font-size: 16px;
+		            margin: 10px 0;
+		            border-radius: 5px;
+		            border: none;
+		            cursor: pointer;
+		            display: inline-block;
+		        }}
+		        </style>
+		        <a href="data:application/octet-stream;base64,{pdf_base64}" download="{pdf_file_name}">
+		        <div class="download-button">📄 Download {task_type} PDF</div></a>
+		    """, unsafe_allow_html=True)
 
-            task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
 
-            with st.spinner('Generating your task...'):
-                response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
-                file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                create_pdf(task_description, response_text, file_name, task_type)
-
-            # Display the task response
-            st.header("Generated Task Response")
-            st.write(response_text)
-
-            st.success(f"Task generated and saved as {file_name}.")
-            
-            # Add download button with balloons
-            if st.download_button(label="Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime='application/pdf'):
-                st.balloons()
 
 if __name__ == "__main__":
     main()
