@@ -228,16 +228,23 @@ def main():
             num_questions_or_term = term
             total_marks_or_week = week
         else:
-            num_questions = st.slider("Number of Questions", 1, 100)
-            total_marks = st.slider("Total Marks", 1, 1000)
+            num_questions = st.slider("Number of Questions", 1, 50)
+            total_marks = st.slider("Total Marks", 1, 100)
             num_questions_or_term = num_questions
             total_marks_or_week = total_marks
 
         if st.button("Generate Task"):
             task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
-            file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-            create_pdf(task_description, response_text, file_name, task_type)
+        
+            with st.spinner('Generating your task...'):
+                response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
+                file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_pdf(task_description, response_text, file_name, task_type)
+        
+            # Display the task response
+            st.header("Generated Task Response")
+            st.write(response_text)
+        
             st.success(f"Task generated and saved as {file_name}.")
             st.download_button(label="Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime='application/pdf')
 
