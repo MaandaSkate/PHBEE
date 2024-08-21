@@ -278,9 +278,7 @@ def main():
 		<div class="download-button">📄 Download {task_type} PDF</div></a>
 	    """, unsafe_allow_html=True)
 
-	    if task_type != "lesson plan":
-		memo = create_memo(response_text)
-		st.markdown(f"**Memo:**\n\n{memo}")		
+		
 
 if __name__ == "__main__":
     main()
