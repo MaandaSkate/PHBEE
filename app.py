@@ -208,14 +208,15 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
 # Main Function
 def main():
     st.sidebar.title("PHBEE Educational Tools")
-    menu = ["Chatbot", "Task Generator"]
+    menu = ["Home", "Chatbot", "Task Generator"]
     choice = st.sidebar.selectbox("Select an Option", menu)
-
     # Ensure session_id is initialized
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = generate_session_id()
-
-    if choice == "Chatbot":
+    
+    if choice == "Home":
+        display_home_page()
+    elif choice == "Chatbot":
         chatbot()
     elif choice == "Task Generator":
         st.subheader("Generate Educational Tasks")
