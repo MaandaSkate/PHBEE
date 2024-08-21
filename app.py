@@ -54,6 +54,29 @@ client = initialize_dialogflow_client(credentials)
 db = initialize_firestore_client(credentials, project_id)
 
 # You can now use `client` to interact with Dialogflow and `db` to interact with Firestore
+# Home Page Display Function
+def display_home_page():
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.title('PHBEE :rocket:')
+        st.header("AI Powered Educational Chatbot 🏠")
+        st.divider()
+        st.header("About :memo:")
+        st.markdown('''
+        ####
+        PHBEE is an AI-powered educational chatbot designed to assist teachers, school administrators, and educational department workers in South Africa by automating the creation of educational materials.
+
+        PHBEE is trained on both CAPS and IEB standards from grade R to 12. It can help create lesson plans, assessments, marking rubrics, tests, exams, and timetables. Additionally, it assists in creating school management plans, policies, and tracking student progress, ensuring effective communication between schools and parents.
+
+        With PHBEE, you can develop curriculums, frameworks, policies, and procedures based on current regulations. The chatbot helps students with their homework, tasks, and understanding of subject concepts, all aligned with IEB and CAPS standards.
+        ''')
+        st.markdown("#### `Get Started Now!`")
+        # Add the YouTube video
+        st.header("How the App Works")
+        st.video("https://youtu.be/HlaGFOQ-aLk")
+    with col2:
+        st.image("image/PHBEE LOGO FINAL.png")  # Update with the correct path to your image
+
 
 
 def img_to_base64(image_path):
@@ -182,12 +205,15 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
             f"and the total marks should sum up to {total_marks_or_week}."
         )
 
+# Main Function
 def main():
     st.sidebar.title("PHBEE Educational Tools")
-    menu = ["Chatbot", "Task Generator"]
+    menu = ["Home", "Chatbot", "Task Generator"]
     choice = st.sidebar.selectbox("Select an Option", menu)
 
-    if choice == "Chatbot":
+    if choice == "Home":
+        display_home_page()
+    elif choice == "Chatbot":
         chatbot()
     elif choice == "Task Generator":
         st.subheader("Generate Educational Tasks")
@@ -216,7 +242,7 @@ def main():
             st.download_button(label="Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime='application/pdf')
 
 if __name__ == "__main__":
-    main()
+    main())
 
 
 
