@@ -253,6 +253,7 @@ def main():
             # Add download button with balloons
             if st.download_button(label="Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime='application/pdf'):
                 st.balloons()
+
                 
 if __name__ == "__main__":
     main()
