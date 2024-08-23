@@ -55,6 +55,7 @@ db = initialize_firestore_client(credentials, project_id)
 
 # You can now use `client` to interact with Dialogflow and `db` to interact with Firestore
 # Home Page Display Function
+
 def display_home_page():
     col1, col2 = st.columns([2, 1])
     with col1:
@@ -70,11 +71,16 @@ def display_home_page():
 
         With PHBEE, you can develop curriculums, frameworks, policies, and procedures based on current regulations. The chatbot helps students with their homework, tasks, and understanding of subject concepts, all aligned with IEB and CAPS standards.
         ''')
+
+        # Button to navigate to the Task Generator
         if st.button("Get Started Now!"):
-            st.experimental_set_query_params(tab="task_generator")
+            st.experimental_set_query_params(tab="Task Generator")
+            st.experimental_rerun()  # Force a rerun to apply the query parameters
+
         # Add the YouTube video
         st.header("How the App Works")
         st.video("https://youtu.be/HlaGFOQ-aLk")
+        
     with col2:
         st.image("image/PHBEE LOGO FINAL.png")  # Update with the correct path to your image
 
