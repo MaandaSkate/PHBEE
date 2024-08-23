@@ -70,7 +70,8 @@ def display_home_page():
 
         With PHBEE, you can develop curriculums, frameworks, policies, and procedures based on current regulations. The chatbot helps students with their homework, tasks, and understanding of subject concepts, all aligned with IEB and CAPS standards.
         ''')
-        st.markdown("#### `Get Started Now!`")
+        if st.button("Get Started Now!"):
+            st.experimental_set_query_params(tab="task_generator")
         # Add the YouTube video
         st.header("How the App Works")
         st.video("https://youtu.be/HlaGFOQ-aLk")
