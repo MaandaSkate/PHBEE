@@ -75,7 +75,7 @@ def display_home_page():
         # Button to navigate to the Task Generator
         if st.button("Get Started Now!"):
             st.experimental_set_query_params(tab="Task Generator")
-            st.experimental_rerun()  # Force a rerun to apply the query parameters
+      
 
         # Add the YouTube video
         st.header("How the App Works")
