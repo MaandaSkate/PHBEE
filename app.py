@@ -50,25 +50,25 @@ def display_home_page():
     col1, col2 = st.columns([2, 1])
     with col1:
         st.title('PHBEE :rocket:')
-        st.header("AI Powered Educational Chatbot 🏠")
+        st.header("AI-Powered Educational Assistant 🏠")
         st.divider()
-        st.header("About :memo:")
+        st.header("About PHBEE :memo:")
         st.markdown('''
         ####
-        PHBEE is an AI-powered educational chatbot designed to assist teachers, school administrators, and educational department workers in South Africa by automating the creation of educational materials.
+        PHBEE is an AI-powered educational assistant designed to support teachers, school administrators, and educational professionals in South Africa by automating the creation of educational materials.
 
-        PHBEE is trained on both CAPS and IEB standards from grade R to 12. It can help create lesson plans, assessments, marking rubrics, tests, exams, and timetables. Additionally, it assists in creating school management plans, policies, and tracking student progress, ensuring effective communication between schools and parents.
+        PHBEE offers tools to generate lesson plans, assessments, worksheets, quizzes, and more. It aligns with both CAPS and IEB standards for grades R to 12, providing a comprehensive solution to streamline educational tasks and enhance teaching efficiency.
 
-        With PHBEE, you can develop curriculums, frameworks, policies, and procedures based on current regulations. The chatbot helps students with their homework, tasks, and understanding of subject concepts, all aligned with IEB and CAPS standards.
+        Whether you need help with creating curriculum materials, tracking student progress, or generating classroom resources, PHBEE is here to assist you in achieving educational excellence.
         ''')
 
         # Button to navigate to the Task Generator
-        if st.button("Get Started Now!"):
+        if st.button("Explore Educational Tasks"):
             st.experimental_set_query_params(page="Task Generator")
             st.experimental_rerun()  # Force a rerun to apply the query parameters
 
-        # Add the YouTube video
-        st.header("How the App Works")
+        # Add the educational task-focused YouTube video
+        st.header("How PHBEE Helps You")
         st.video("https://youtu.be/HlaGFOQ-aLk")
         
     with col2:
