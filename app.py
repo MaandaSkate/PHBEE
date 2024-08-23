@@ -3,9 +3,8 @@ import streamlit as st
 import datetime
 import random
 from fpdf import FPDF
-from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx, firestore
+from google.cloud import dialogflowcx_v3 as dialogflow_cx, firestore
 from google.oauth2 import service_account
-from google.cloud import firestore
 import json
 import base64
 
@@ -20,14 +19,7 @@ footer {visibility: hidden;}
 header {visibility: hidden;}
 </style>
 """
-
 st.markdown(hide_st_style, unsafe_allow_html=True)
-
-import os
-import streamlit as st
-from google.oauth2 import service_account
-from google.cloud import dialogflowcx_v3 as dialogflow_cx
-from google.cloud import firestore
 
 # Load credentials from Streamlit secrets
 credentials_info = st.secrets["google_service_account_key"]
@@ -53,9 +45,7 @@ language_code = "en"
 client = initialize_dialogflow_client(credentials)
 db = initialize_firestore_client(credentials, project_id)
 
-# You can now use `client` to interact with Dialogflow and `db` to interact with Firestore
 # Home Page Display Function
-
 def display_home_page():
     col1, col2 = st.columns([2, 1])
     with col1:
@@ -74,8 +64,8 @@ def display_home_page():
 
         # Button to navigate to the Task Generator
         if st.button("Get Started Now!"):
-            st.experimental_set_query_params(tab="Task Generator")
-      
+            st.experimental_set_query_params(page="Task Generator")
+            st.experimental_rerun()  # Force a rerun to apply the query parameters
 
         # Add the YouTube video
         st.header("How the App Works")
@@ -84,24 +74,20 @@ def display_home_page():
     with col2:
         st.image("image/PHBEE LOGO FINAL.png")  # Update with the correct path to your image
 
-
-
+# Utility Functions
 def img_to_base64(image_path):
     try:
-        # Ensure the image path is valid
         if not os.path.isfile(image_path):
             raise FileNotFoundError(f"The file {image_path} does not exist.")
-        
         with open(image_path, "rb") as img_file:
             img_data = img_file.read()
         return base64.b64encode(img_data).decode('utf-8')
     except FileNotFoundError as e:
         st.error(f"Error: {str(e)}")
-        # Return a placeholder image if file is not found
-        return base64.b64encode(b'').decode('utf-8')  # Placeholder for missing image
+        return base64.b64encode(b'').decode('utf-8')
     except Exception as e:
         st.error(f"An unexpected error occurred: {str(e)}")
-        return base64.b64encode(b'').decode('utf-8')  # Placeholder for missing image
+        return base64.b64encode(b'').decode('utf-8')
 
 def generate_session_id():
     return f"session_{datetime.datetime.now().timestamp()}"
@@ -166,6 +152,7 @@ def create_memo(response_text):
             memo += question + "\n"
     return memo
 
+# Chatbot Function
 def chatbot():
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
@@ -199,70 +186,74 @@ def chatbot():
         else:
             st.error("Chat history contains invalid data.")
 
+# Task Generator Function
 def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
     if task_type == "lesson plan":
         return (
             f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
-            f"{curriculum} curriculum. The lesson plan should cover term {num_questions_or_term} and week {total_marks_or_week}."
+            f"{curriculum} curriculum. The lesson plan should cover term {num_questions_or_term}, week {total_marks_or_week}."
         )
     else:
         return (
-            f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
-            f"{curriculum} curriculum. The task should include {num_questions_or_term} questions, each with 4 options, "
-            f"and the total marks should sum up to {total_marks_or_week}."
+            f"Generate a {task_type} for the {subject} subject, targeting grade {grade} students under the "
+            f"{curriculum} curriculum. The {task_type} should consist of {num_questions_or_term} questions, "
+            f"with a total of {total_marks_or_week} marks."
         )
 
-# Main Function
-def main():
-    st.sidebar.title("PHBEE Educational Tools")
-    menu = ["Home", "Chatbot", "Task Generator"]
-    choice = st.sidebar.selectbox("Select an Option", menu)
-    # Ensure session_id is initialized
-    if 'session_id' not in st.session_state:
-        st.session_state['session_id'] = generate_session_id()
+def task_generator():
+    st.title("PHBEE Task Generator :pencil:")
+    task_type = st.selectbox("Select Task Type", ["worksheet", "quiz", "class exercise", "homework", "lesson plan"])
+    subject = st.selectbox("Select Subject", ["Mathematics", "Physical Science", "Life Science", "English", "History", "Geography"])
+    grade = st.selectbox("Select Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
+    curriculum = st.selectbox("Select Curriculum", ["CAPS", "IEB"])
     
-    if choice == "Home":
-        display_home_page()
-    elif choice == "Chatbot":
-        chatbot()
-    elif choice == "Task Generator":
-        st.subheader("Generate Educational Tasks")
-        task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
-        subject = st.text_input("Subject")
-        grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
-        curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
+    if task_type == "lesson plan":
+        num_questions_or_term = st.text_input("Term", key="term", placeholder="e.g., 1")
+        total_marks_or_week = st.text_input("Week", key="week", placeholder="e.g., 1")
+    else:
+        num_questions_or_term = st.slider("Number of Questions", min_value=1, max_value=100, value=10)
+        total_marks_or_week = st.slider("Total Marks", min_value=1, max_value=300, value=100)
 
-        if task_type == "Lesson Plan":
-            term = st.slider("Term", 1, 4)
-            week = st.slider("Week", 1, 10)
-            num_questions_or_term = term
-            total_marks_or_week = week
-        else:
-            num_questions = st.slider("Number of Questions", 1, 50)
-            total_marks = st.slider("Total Marks", 1, 100)
-            num_questions_or_term = num_questions
-            total_marks_or_week = total_marks
+    task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
 
-        if st.button("Generate Task"):
-            # Clear chat history for a fresh response
-            st.session_state['chat_history'] = []
-
-            task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-
-            with st.spinner('Generating your task...'):
-                response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
-                file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    if st.button("Generate Task"):
+        if task_description:
+            with st.spinner("Generating..."):
+                response_text = detect_intent_text(client, project_id, agent_id, generate_session_id(), task_description, language_code="en")
+                file_name = f"{task_type}_{subject}_grade_{grade}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 create_pdf(task_description, response_text, file_name, task_type)
+                with open(file_name, "rb") as file:
+                    base64_pdf = base64.b64encode(file.read()).decode('utf-8')
+                st.success("Task generated successfully!")
+                st.download_button(
+                    label="Download Task PDF",
+                    data=base64_pdf,
+                    file_name=file_name,
+                    mime="application/pdf"
+                )
+        else:
+            st.warning("Please fill in all the required fields to generate a task.")
 
-            # Display the task response
-            st.header("Generated Task Response")
-            st.write(response_text)
+# Main App Function
+def main():
+    query_params = st.experimental_get_query_params()
+    page = query_params.get("page", ["Home"])[0]
 
-            st.success(f"Task generated and saved as {file_name}.")
-            
-            # Add download button with balloons
-            if st.download_button(label="Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime='application/pdf'):
-                st.balloons()
+    tabs = {
+        "Home": display_home_page,
+        "Task Generator": task_generator,
+        "Chatbot": chatbot
+    }
+
+    st.sidebar.title("PHBEE")
+    selection = st.sidebar.radio("Navigate", list(tabs.keys()))
+
+    if selection == "Home" or page == "Home":
+        display_home_page()
+    elif selection == "Task Generator" or page == "Task Generator":
+        task_generator()
+    elif selection == "Chatbot" or page == "Chatbot":
+        chatbot()
 
 if __name__ == "__main__":
     main()
