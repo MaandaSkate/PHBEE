@@ -290,6 +290,10 @@ def free_task():
 
 # Navigation
 def main():
+    # Initialize session state for session_id if not already set
+    if 'session_id' not in st.session_state:
+        st.session_state['session_id'] = generate_session_id()
+
     st.sidebar.title("Navigation")
     page = st.sidebar.radio("Go to", ["Home", "Chatbot", "Task Generator", "Free Task"])
 
