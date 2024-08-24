@@ -215,8 +215,8 @@ def task_generator():
         num_questions_or_term = term
         total_marks_or_week = week
     else:
-        num_questions = st.slider("Number of Questions", 1, 100)
-        total_marks = st.slider("Total Marks", 1, 300)
+        num_questions = st.slider("Number of Questions", 1, 50)
+        total_marks = st.slider("Total Marks", 1, 100)
         num_questions_or_term = num_questions
         total_marks_or_week = total_marks
 
