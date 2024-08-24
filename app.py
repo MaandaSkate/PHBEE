@@ -224,16 +224,13 @@ def task_generator():
         task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
         response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
-        # Create PDF
-        pdf_file_name = f"{task_type}_for_{subject}_Grade_{grade}.pdf"
-        create_pdf(task_description, response_text, pdf_file_name, task_type)
-
-        # Show balloons when the PDF is generated
-        st.balloons()
-
         # Display the generated task and response
         st.markdown(f"**Task Description:**\n\n{task_description}")
         st.markdown(f"**Generated Task:**\n\n{response_text}")
+
+        # Create PDF
+        pdf_file_name = f"{task_type}_for_{subject}_Grade_{grade}.pdf"
+        create_pdf(task_description, response_text, pdf_file_name, task_type)
 
         # Display download button with colors aligned to the logo
         pdf_button_color = "#FFCC00"  # A color matching your logo
@@ -256,9 +253,17 @@ def task_generator():
             <div class="download-button">📄 Download {task_type} PDF</div></a>
         """, unsafe_allow_html=True)
 
+        # Show balloons when the PDF is generated
+        st.balloons()
+
+        # Optionally, add a memo if the task type is not "Lesson Plan"
         if task_type != "Lesson Plan":
             memo = create_memo(response_text)
             st.markdown(f"**Memo:**\n\n{memo}")
+
+        # Display a success message
+        st.success(f"{task_type} PDF has been successfully generated and is ready for download.")
+
 
 
 # New Function to handle the Free Task
