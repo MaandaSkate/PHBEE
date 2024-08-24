@@ -205,6 +205,29 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
             f"and the total marks should sum up to {total_marks_or_week}."
         )
 
+
+# New Function to handle the Free Task
+def free_task():
+    st.subheader("Free Task")
+    st.markdown("Generate a custom PDF based on your request.")
+
+    request_text = st.text_area("Enter your request")
+    if st.button("Generate Free Task"):
+        with st.spinner("Generating..."):
+            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], request_text)
+            pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            create_pdf(request_text, response_text, pdf_file_name, "Free Task")
+
+            st.markdown(f"**Generated PDF:** {request_text}")
+            st.markdown(f"**Response:** {response_text}")
+
+            st.markdown(f"""
+                <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
+                <div style="background-color: #FFCC00; color: white; padding: 10px; text-align: center; border-radius: 5px;">
+                📄 Download Free Task PDF</div></a>
+            """, unsafe_allow_html=True)
+
+
 # Main Function
 def main():
     st.sidebar.title("PHBEE Educational Tools")
@@ -217,7 +240,9 @@ def main():
     if choice == "Home":
         display_home_page()
     elif choice == "Chatbot":
-        chatbot()
+        chatbot
+    elif page == "Free Task":
+        free_task()
     elif choice == "Task Generator":
         st.subheader("Generate Educational Tasks")
         task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
