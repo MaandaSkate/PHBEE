@@ -241,7 +241,7 @@ def main():
         display_home_page()
     elif choice == "Chatbot":
         chatbot
-    elif page == "Free Task":
+    elif choice == "Free Task":
         free_task()
     elif choice == "Task Generator":
         st.subheader("Generate Educational Tasks")
