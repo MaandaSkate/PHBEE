@@ -38,8 +38,6 @@ def initialize_firestore_client(credentials, project_id):
 # Define the Dialogflow parameters
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
-session_id = "123456789"
-language_code = "en"
 
 # Initialize clients
 client = initialize_dialogflow_client(credentials)
@@ -103,7 +101,7 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.set_xy(10, 40)
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
 
-    if task_type != "lesson plan":  # Add memo for all tasks except lesson plan
+    if task_type != "Lesson Plan":  # Add memo for all tasks except Lesson Plan
         memo = create_memo(response_text)
         pdf.ln(10)
         pdf.set_xy(10, pdf.get_y())
@@ -188,7 +186,7 @@ def chatbot():
 
 # Function to generate task description
 def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
-    if task_type == "lesson plan":
+    if task_type == "Lesson Plan":
         return (
             f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
             f"{curriculum} curriculum. The lesson plan should cover {num_questions_or_term} weeks, focusing on the core concepts "
@@ -229,7 +227,7 @@ def task_generator():
         st.markdown(f"**Generated Task:**\n\n{response_text}")
 
         # Create PDF
-        pdf_file_name = f"{task_type}_for_{subject}_Grade_{grade}.pdf"
+        pdf_file_name = f"{task_type.replace(' ', '_')}_for_{subject}_Grade_{grade}.pdf"
         create_pdf(task_description, response_text, pdf_file_name, task_type)
 
         # Display download button with colors aligned to the logo
@@ -265,7 +263,6 @@ def task_generator():
 
         # Display a success message
         st.success(f"{task_type} PDF has been successfully generated and is ready for download.")
-
 
 # New Function to handle the Free Task
 def free_task():
