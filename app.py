@@ -234,6 +234,8 @@ def task_generator():
 
         # Display download button with colors aligned to the logo
         pdf_button_color = "#FFCC00"  # A color matching your logo
+        with open(pdf_file_name, "rb") as pdf_file:
+            pdf_data = pdf_file.read()
         st.markdown(f"""
             <style>
             .download-button {{
@@ -249,7 +251,7 @@ def task_generator():
                 display: inline-block;
             }}
             </style>
-            <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
+            <a href="data:application/octet-stream;base64,{base64.b64encode(pdf_data).decode()}" download="{pdf_file_name}">
             <div class="download-button">📄 Download {task_type} PDF</div></a>
         """, unsafe_allow_html=True)
 
@@ -263,7 +265,6 @@ def task_generator():
 
         # Display a success message
         st.success(f"{task_type} PDF has been successfully generated and is ready for download.")
-
 
 
 # New Function to handle the Free Task
