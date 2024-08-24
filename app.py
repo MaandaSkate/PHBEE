@@ -215,26 +215,50 @@ def task_generator():
         num_questions_or_term = term
         total_marks_or_week = week
     else:
-        num_questions = st.slider("Number of Questions", 1, 50)
-        total_marks = st.slider("Total Marks", 1, 100)
+        num_questions = st.slider("Number of Questions", 1, 50)  # Max 50
+        total_marks = st.slider("Total Marks", 1, 100)  # Max 100
         num_questions_or_term = num_questions
         total_marks_or_week = total_marks
 
-    if st.button("Generate Task"):
+    if st.button("Generate"):
         task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-        with st.spinner("Generating..."):
-            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
-            pdf_file_name = f"{task_type.capitalize()}_{subject}_{grade}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-            create_pdf(task_description, response_text, pdf_file_name, task_type)
+        response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
-            st.markdown(f"**Generated PDF:** {task_description}")
-            st.markdown(f"**Response:** {response_text}")
+        # Create PDF
+        pdf_file_name = f"{task_type}_for_{subject}_Grade_{grade}.pdf"
+        create_pdf(task_description, response_text, pdf_file_name, task_type)
 
-            st.markdown(f"""
-                <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
-                <div style="background-color: #FFCC00; color: white; padding: 10px; text-align: center; border-radius: 5px;">
-                📄 Download {task_type.capitalize()} PDF</div></a>
-            """, unsafe_allow_html=True)
+        # Show balloons when the PDF is generated
+        st.balloons()
+
+        # Display the generated task and response
+        st.markdown(f"**Task Description:**\n\n{task_description}")
+        st.markdown(f"**Generated Task:**\n\n{response_text}")
+
+        # Display download button with colors aligned to the logo
+        pdf_button_color = "#FFCC00"  # A color matching your logo
+        st.markdown(f"""
+            <style>
+            .download-button {{
+                background-color: {pdf_button_color};
+                color: white;
+                padding: 10px;
+                text-align: center;
+                font-size: 16px;
+                margin: 10px 0;
+                border-radius: 5px;
+                border: none;
+                cursor: pointer;
+                display: inline-block;
+            }}
+            </style>
+            <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
+            <div class="download-button">📄 Download {task_type} PDF</div></a>
+        """, unsafe_allow_html=True)
+
+        if task_type != "Lesson Plan":
+            memo = create_memo(response_text)
+            st.markdown(f"**Memo:**\n\n{memo}")
 
 
 # New Function to handle the Free Task
