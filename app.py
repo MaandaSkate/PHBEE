@@ -221,16 +221,25 @@ def task_generator():
     if st.button("Generate"):
         # Generate task description
         task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-        # Get response from Dialogflow
-        response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
         
+        # Get response from Dialogflow
+        try:
+            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
+            if not response_text:
+                response_text = "No response from Dialogflow."
+        except Exception as e:
+            response_text = f"Error: {str(e)}"
+        
+        # Display the task description and response from PHBEE
+        st.markdown(f"**Task Description:**\n\n{task_description}")
+        st.markdown(f"**PHBEE Response:**\n\n{response_text}")
+
         # Create PDF
         pdf_file_name = f"{task_type}_for_{subject}_Grade_{grade}.pdf"
         create_pdf(task_description, response_text, pdf_file_name, task_type)
 
-        # Display the task description and response from PHBEE
-        st.markdown(f"**Task Description:**\n\n{task_description}")
-        st.markdown(f"**PHBEE Response:**\n\n{response_text}")
+        # Show balloons to indicate success
+        st.balloons()
 
         # Display download button for the PDF
         pdf_button_color = "#FFCC00"  # A color matching your logo
@@ -260,10 +269,7 @@ def task_generator():
             memo = create_memo(response_text)
             st.markdown(f"**Memo:**\n\n{memo}")
 
-        # Show balloons to indicate success
-        st.balloons()
-
-        # Display success message
+        # Display a success message
         st.success(f"{task_type} PDF has been successfully generated and is ready for download.")
 
 # New Function to handle the Free Task
