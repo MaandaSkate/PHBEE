@@ -3,7 +3,7 @@ import streamlit as st
 import datetime
 import random
 from fpdf import FPDF
-from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx, firestore
+from google.cloud import dialogflowcx_v3 as dialogflow_cx, firestore
 from google.oauth2 import service_account
 import json
 import base64
@@ -45,12 +45,40 @@ language_code = "en"
 client = initialize_dialogflow_client(credentials)
 db = initialize_firestore_client(credentials, project_id)
 
-# Function to convert an image to base64
+# Home Page Display Function
+def display_home_page():
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.title('PHBEE :rocket:')
+        st.header("AI-Powered Educational Assistant 🏠")
+        st.divider()
+        st.header("About PHBEE :memo:")
+        st.markdown('''
+        ####
+        PHBEE is an AI-powered educational assistant designed to support teachers, school administrators, and educational professionals in South Africa by automating the creation of educational materials.
+
+        PHBEE offers tools to generate lesson plans, assessments, worksheets, quizzes, and more. It aligns with both CAPS and IEB standards for grades R to 12, providing a comprehensive solution to streamline educational tasks and enhance teaching efficiency.
+
+        Whether you need help with creating curriculum materials, tracking student progress, or generating classroom resources, PHBEE is here to assist you in achieving educational excellence.
+        ''')
+
+        # Button to navigate to the Task Generator
+        if st.button("Explore Educational Tasks"):
+            st.experimental_set_query_params(page="Task Generator")
+            st.experimental_rerun()  # Force a rerun to apply the query parameters
+
+        # Add the educational task-focused YouTube video
+        st.header("How PHBEE Helps You")
+        st.video("https://youtu.be/HlaGFOQ-aLk")
+        
+    with col2:
+        st.image("image/PHBEE LOGO FINAL.png")  # Update with the correct path to your image
+
+# Utility Functions
 def img_to_base64(image_path):
     try:
         if not os.path.isfile(image_path):
             raise FileNotFoundError(f"The file {image_path} does not exist.")
-        
         with open(image_path, "rb") as img_file:
             img_data = img_file.read()
         return base64.b64encode(img_data).decode('utf-8')
@@ -61,11 +89,9 @@ def img_to_base64(image_path):
         st.error(f"An unexpected error occurred: {str(e)}")
         return base64.b64encode(b'').decode('utf-8')
 
-# Function to generate a session ID
 def generate_session_id():
     return f"session_{datetime.datetime.now().timestamp()}"
 
-# Function to create a PDF
 def create_pdf(task_description, response_text, file_name, task_type):
     pdf = FPDF()
     pdf.add_page()
@@ -80,7 +106,7 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.set_xy(10, 40)
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
 
-    if task_type != "Lesson Plan":  # Add memo for all tasks except lesson plan
+    if task_type != "lesson plan":  # Add memo for all tasks except lesson plan
         memo = create_memo(response_text)
         pdf.ln(10)
         pdf.set_xy(10, pdf.get_y())
@@ -88,16 +114,6 @@ def create_pdf(task_description, response_text, file_name, task_type):
 
     pdf.output(file_name)
 
-# Function to create a memo
-def create_memo(response_text):
-    memo = "\nMemo:\n"
-    questions = response_text.split("\n")
-    for question in questions:
-        if "Answer:" in question:
-            memo += question + "\n"
-    return memo
-
-# Function to detect intent using Dialogflow
 def detect_intent_text(client, project_id, agent_id, session_id, text, language_code="en"):
     session_path = f"projects/{project_id}/locations/global/agents/{agent_id}/sessions/{session_id}"
     text_input = dialogflow_cx.TextInput(text=text)
@@ -106,7 +122,6 @@ def detect_intent_text(client, project_id, agent_id, session_id, text, language_
     response = client.detect_intent(request=request)
     return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
 
-# Function to display messages in the chatbot
 def display_message(sender, message):
     if sender == "user":
         st.markdown(f'''
@@ -129,7 +144,15 @@ def display_message(sender, message):
             </div>
             ''', unsafe_allow_html=True)
 
-# Function to handle the chatbot interface
+def create_memo(response_text):
+    memo = "\nMemo:\n"
+    questions = response_text.split("\n")
+    for question in questions:
+        if "Answer:" in question:
+            memo += question + "\n"
+    return memo
+
+# Chatbot Function
 def chatbot():
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
@@ -163,136 +186,74 @@ def chatbot():
         else:
             st.error("Chat history contains invalid data.")
 
-# Function to generate task description
+# Task Generator Function
 def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
-    if task_type == "Lesson Plan":
+    if task_type == "lesson plan":
         return (
             f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
-            f"{curriculum} curriculum. The lesson plan should cover {num_questions_or_term} weeks, focusing on the core concepts "
-            f"of the subject, with objectives, teaching strategies, assessment methods, and resources."
+            f"{curriculum} curriculum. The lesson plan should cover term {num_questions_or_term}, week {total_marks_or_week}."
         )
     else:
         return (
-            f"Create a {task_type} for the {subject} subject, targeting grade {grade} students under the {curriculum} curriculum. "
-            f"The {task_type} should consist of {num_questions_or_term} questions, with a total of {total_marks_or_week} marks. "
-            f"Include a variety of question types, such as multiple-choice, short answer, and essay questions."
+            f"Generate a {task_type} for the {subject} subject, targeting grade {grade} students under the "
+            f"{curriculum} curriculum. The {task_type} should consist of {num_questions_or_term} questions, "
+            f"with a total of {total_marks_or_week} marks."
         )
 
-# Function to handle task generation
 def task_generator():
-    st.subheader("Generate Educational Tasks")
-    task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
-    subject = st.text_input("Subject")
-    grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
-    curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
-
-    if task_type == "Lesson Plan":
-        term = st.slider("Term", 1, 4)
-        week = st.slider("Week", 1, 10)
-        num_questions_or_term = term
-        total_marks_or_week = week
+    st.title("PHBEE Task Generator :pencil:")
+    task_type = st.selectbox("Select Task Type", ["worksheet", "quiz", "class exercise", "homework", "lesson plan"])
+    subject = st.selectbox("Select Subject", ["Mathematics", "Physical Science", "Life Science", "English", "History", "Geography"])
+    grade = st.selectbox("Select Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
+    curriculum = st.selectbox("Select Curriculum", ["CAPS", "IEB"])
+    
+    if task_type == "lesson plan":
+        num_questions_or_term = st.text_input("Term", key="term", placeholder="e.g., 1")
+        total_marks_or_week = st.text_input("Week", key="week", placeholder="e.g., 1")
     else:
-        num_questions = st.slider("Number of Questions", 1, 50)  # Max 50
-        total_marks = st.slider("Total Marks", 1, 100)  # Max 100
-        num_questions_or_term = num_questions
-        total_marks_or_week = total_marks
+        num_questions_or_term = st.slider("Number of Questions", min_value=1, max_value=100, value=10)
+        total_marks_or_week = st.slider("Total Marks", min_value=1, max_value=300, value=100)
 
-    if st.button("Generate"):
-        # Generate task description
-        task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-        
-        # Get response from Dialogflow
-        try:
-            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
-            if not response_text:
-                response_text = "No response from Dialogflow."
-        except Exception as e:
-            response_text = f"Error: {str(e)}"
-        
-        # Display the task description and response from PHBEE
-        st.markdown(f"**Task Description:**\n\n{task_description}")
-        st.markdown(f"**PHBEE Response:**\n\n{response_text}")
+    task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
 
-        # Create PDF
-        pdf_file_name = f"{task_type}_for_{subject}_Grade_{grade}.pdf"
-        create_pdf(task_description, response_text, pdf_file_name, task_type)
+    if st.button("Generate Task"):
+        if task_description:
+            with st.spinner("Generating..."):
+                response_text = detect_intent_text(client, project_id, agent_id, generate_session_id(), task_description, language_code="en")
+                file_name = f"{task_type}_{subject}_grade_{grade}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_pdf(task_description, response_text, file_name, task_type)
+                with open(file_name, "rb") as file:
+                    base64_pdf = base64.b64encode(file.read()).decode('utf-8')
+                st.success("Task generated successfully!")
+                st.download_button(
+                    label="Download Task PDF",
+                    data=base64_pdf,
+                    file_name=file_name,
+                    mime="application/pdf"
+                )
+        else:
+            st.warning("Please fill in all the required fields to generate a task.")
 
-        # Show balloons to indicate success
-        st.balloons()
-
-        # Display download button for the PDF
-        pdf_button_color = "#FFCC00"  # A color matching your logo
-        with open(pdf_file_name, "rb") as pdf_file:
-            pdf_data = pdf_file.read()
-        st.markdown(f"""
-            <style>
-            .download-button {{
-                background-color: {pdf_button_color};
-                color: white;
-                padding: 10px;
-                text-align: center;
-                font-size: 16px;
-                margin: 10px 0;
-                border-radius: 5px;
-                border: none;
-                cursor: pointer;
-                display: inline-block;
-            }}
-            </style>
-            <a href="data:application/octet-stream;base64,{base64.b64encode(pdf_data).decode()}" download="{pdf_file_name}">
-            <div class="download-button">📄 Download {task_type} PDF</div></a>
-        """, unsafe_allow_html=True)
-
-        # Optionally, add a memo if the task type is not "Lesson Plan"
-        if task_type != "Lesson Plan":
-            memo = create_memo(response_text)
-            st.markdown(f"**Memo:**\n\n{memo}")
-
-        # Display a success message
-        st.success(f"{task_type} PDF has been successfully generated and is ready for download.")
-
-# Function to handle the Free Task
-def free_task():
-    st.subheader("Free Task")
-    st.markdown("Generate a custom PDF based on your request.")
-
-    request_text = st.text_area("Enter your request")
-    if st.button("Generate Free Task"):
-        with st.spinner("Generating..."):
-            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], request_text)
-            pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-            create_pdf(request_text, response_text, pdf_file_name, "Free Task")
-
-            st.markdown(f"**Generated PDF:** {request_text}")
-            st.markdown(f"**Response:** {response_text}")
-
-            st.markdown(f"""
-                <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
-                <div style="background-color: #FFCC00; color: white; padding: 10px; text-align: center; border-radius: 5px;">
-                📄 Download Free Task PDF</div></a>
-            """, unsafe_allow_html=True)
-
-            # Show balloons to indicate success
-            st.balloons()
-
-
-# Navigation
+# Main App Function
 def main():
-    # Initialize session state for session_id if not already set
-    if 'session_id' not in st.session_state:
-        st.session_state['session_id'] = generate_session_id()
+    query_params = st.experimental_get_query_params()
+    page = query_params.get("page", ["Home"])[0]
 
-    st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Home", "Chatbot", "Task Generator", "Free Task"])
+    tabs = {
+        "Home": display_home_page,
+        "Task Generator": task_generator,
+        "Chatbot": chatbot
+    }
 
-    if page == "Home":
+    st.sidebar.title("PHBEE")
+    selection = st.sidebar.radio("Navigate", list(tabs.keys()))
+
+    if selection == "Home" or page == "Home":
         display_home_page()
-    elif page == "Chatbot":
-        chatbot()
-    elif page == "Task Generator":
+    elif selection == "Task Generator" or page == "Task Generator":
         task_generator()
-    elif page == "Free Task":
-        free_task()
+    elif selection == "Chatbot" or page == "Chatbot":
+        chatbot()
 
 if __name__ == "__main__":
     main()
