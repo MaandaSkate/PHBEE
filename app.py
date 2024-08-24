@@ -38,33 +38,12 @@ def initialize_firestore_client(credentials, project_id):
 # Define the Dialogflow parameters
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
+session_id = "123456789"
+language_code = "en"
 
 # Initialize clients
 client = initialize_dialogflow_client(credentials)
 db = initialize_firestore_client(credentials, project_id)
-
-# Function to display the home page
-def display_home_page():
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.title('PHBEE :rocket:')
-        st.header("AI Powered Educational Chatbot 🏠")
-        st.divider()
-        st.header("About :memo:")
-        st.markdown('''
-        ####
-        PHBEE is an AI-powered educational chatbot designed to assist teachers, school administrators, and educational department workers in South Africa by automating the creation of educational materials.
-
-        PHBEE is trained on both CAPS and IEB standards from grade R to 12. It can help create lesson plans, assessments, marking rubrics, tests, exams, and timetables. Additionally, it assists in creating school management plans, policies, and tracking student progress, ensuring effective communication between schools and parents.
-
-        With PHBEE, you can develop curriculums, frameworks, policies, and procedures based on current regulations. The chatbot helps students with their homework, tasks, and understanding of subject concepts, all aligned with IEB and CAPS standards.
-        go to the navigation tab on the top left corner to find the other features, enjoy''')
-        
-        # Add the YouTube video
-        st.header("How the App Works")
-        st.video("https://youtu.be/HlaGFOQ-aLk")
-    with col2:
-        st.image("image/PHBEE LOGO FINAL.png")  # Update with the correct path to your image
 
 # Function to convert an image to base64
 def img_to_base64(image_path):
@@ -101,13 +80,22 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.set_xy(10, 40)
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
 
-    if task_type != "Lesson Plan":  # Add memo for all tasks except Lesson Plan
+    if task_type != "Lesson Plan":  # Add memo for all tasks except lesson plan
         memo = create_memo(response_text)
         pdf.ln(10)
         pdf.set_xy(10, pdf.get_y())
         pdf.multi_cell(0, 10, txt=f"{memo}")
 
     pdf.output(file_name)
+
+# Function to create a memo
+def create_memo(response_text):
+    memo = "\nMemo:\n"
+    questions = response_text.split("\n")
+    for question in questions:
+        if "Answer:" in question:
+            memo += question + "\n"
+    return memo
 
 # Function to detect intent using Dialogflow
 def detect_intent_text(client, project_id, agent_id, session_id, text, language_code="en"):
@@ -140,15 +128,6 @@ def display_message(sender, message):
                 </div>
             </div>
             ''', unsafe_allow_html=True)
-
-# Function to create a memo
-def create_memo(response_text):
-    memo = "\nMemo:\n"
-    questions = response_text.split("\n")
-    for question in questions:
-        if "Answer:" in question:
-            memo += question + "\n"
-    return memo
 
 # Function to handle the chatbot interface
 def chatbot():
@@ -272,7 +251,7 @@ def task_generator():
         # Display a success message
         st.success(f"{task_type} PDF has been successfully generated and is ready for download.")
 
-# New Function to handle the Free Task
+# Function to handle the Free Task
 def free_task():
     st.subheader("Free Task")
     st.markdown("Generate a custom PDF based on your request.")
@@ -292,6 +271,10 @@ def free_task():
                 <div style="background-color: #FFCC00; color: white; padding: 10px; text-align: center; border-radius: 5px;">
                 📄 Download Free Task PDF</div></a>
             """, unsafe_allow_html=True)
+
+            # Show balloons to indicate success
+            st.balloons()
+
 
 # Navigation
 def main():
