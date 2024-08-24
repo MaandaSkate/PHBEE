@@ -203,13 +203,22 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
 
 # Function to handle task generation
 def task_generator():
-    st.subheader("Task Generator")
-    task_type = st.selectbox("Select Task Type", ["lesson plan", "homework", "worksheet", "class exercise", "quiz", "test", "exam"])
+    st.subheader("Generate Educational Tasks")
+    task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
     subject = st.text_input("Subject")
-    grade = st.selectbox("Grade", list(range(1, 13)))
-    curriculum = st.selectbox("Curriculum", ["CAPS", "IEB"])
-    num_questions_or_term = st.slider("Number of Questions/Term (weeks)", 1, 20, 5)
-    total_marks_or_week = st.slider("Total Marks/Duration (weeks)", 10, 100, 50)
+    grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
+    curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
+
+    if task_type == "Lesson Plan":
+        term = st.slider("Term", 1, 4)
+        week = st.slider("Week", 1, 10)
+        num_questions_or_term = term
+        total_marks_or_week = week
+    else:
+        num_questions = st.slider("Number of Questions", 1, 100)
+        total_marks = st.slider("Total Marks", 1, 300)
+        num_questions_or_term = num_questions
+        total_marks_or_week = total_marks
 
     if st.button("Generate Task"):
         task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
@@ -226,6 +235,7 @@ def task_generator():
                 <div style="background-color: #FFCC00; color: white; padding: 10px; text-align: center; border-radius: 5px;">
                 📄 Download {task_type.capitalize()} PDF</div></a>
             """, unsafe_allow_html=True)
+
 
 # New Function to handle the Free Task
 def free_task():
