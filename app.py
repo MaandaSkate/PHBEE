@@ -68,7 +68,7 @@ def display_home_page():
 
         PHBEE is trained on both CAPS and IEB standards from grade R to 12. It can help create lesson plans, assessments, marking rubrics, tests, exams, and timetables. It also assists in building school management plans, and policies, and tracking student progress, ensuring effective communication between schools and parents.
 
-        With PHBEE, you can develop curriculums, frameworks, policies, and procedures based on current regulations. The chatbot helps students with their homework, tasks, and understanding of subject concepts, all aligned with IEB and CAPS standards. Please go to the left top corner and click the navigation arrow to enjoy all the features.
+        With PHBEE, you can develop curriculums, frameworks, policies, and procedures based on current regulations. The chatbot helps students with their homework, tasks, and understanding of subject concepts, all aligned with IEB and CAPS standards. AFTER WATCHING THE VIDEO, PLEASE GO TO THE LEFT TOP CORNER OF THE PAGE, CLICK THE NAVIGATION ARROW AND ENJOY ALL THE FEATURES.
         ''')
         
         # Add the YouTube video
