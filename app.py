@@ -103,7 +103,7 @@ def display_message(sender, message):
     if sender == "user":
         st.markdown(f'''
             <div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-end;">
-                <div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">
+                <div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px; word-wrap: break-word;">
                     {message}
                 </div>
                 <img src="data:image/png;base64,{img_to_base64('image/PHBEE USER ICON.png')}" 
@@ -115,7 +115,7 @@ def display_message(sender, message):
             <div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">
                 <img src="data:image/png;base64,{img_to_base64('image/PHBEE LOGO FINAL.png')}" 
                      style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
-                <div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px;">
+                <div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px; word-wrap: break-word;">
                     {message}
                 </div>
             </div>
@@ -144,6 +144,7 @@ def chatbot():
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
     user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
+    
     if st.button("Send"):
         if user_input:
             with st.spinner('Processing...'):
@@ -151,17 +152,23 @@ def chatbot():
             display_message("user", user_input)
             display_message("PHBEE", response)
 
+            # Append to chat history
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
+
+            # Clear input field after sending message
+            st.session_state["input"] = ""
 
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
 
+    # Display chat history
     for chat in st.session_state['chat_history']:
         if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
             display_message(chat['sender'], chat['message'])
         else:
             st.error("Chat history contains invalid data.")
+
 # Function to generate a task description
 def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
     if task_type == "lesson plan":
