@@ -6,8 +6,6 @@ from fpdf import FPDF
 from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
 from google.cloud import firestore
-import gspread
-from google.oauth2.service_account import Credentials
 import base64
 
 # Set the page configuration
