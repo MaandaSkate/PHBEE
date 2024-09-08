@@ -176,8 +176,10 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
             f"and the total marks should sum up to {total_marks_or_week}."
         )
 # Task Generator logic
+
 def task_generator():
     st.subheader("Generate Educational Tasks")
+    
     task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
     subject = st.text_input("Subject")
     grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
@@ -195,13 +197,32 @@ def task_generator():
         total_marks_or_week = total_marks
 
     if st.button("Generate Task"):
-        task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-        response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
-        file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        try:
+            # Generate task description and detect intent
+            task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
+            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
-        create_pdf(task_description, response_text, file_name, task_type)
-        st.success(f"Task generated and saved as {file_name}.")
-        st.download_button(label="Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime='application/pdf')
+            # Show the response text to the user
+            st.subheader("Generated Task Description and Response")
+            st.write(f"**Task Type:** {task_type}")
+            st.write(f"**Task Description:** {task_description}")
+            st.write(f"**Response from Intent Detection:** {response_text}")
+
+            # Create the PDF file
+            file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            create_pdf(task_description, response_text, file_name, task_type)
+            
+            # Provide a download button after displaying the response
+            st.success(f"Task generated and saved as {file_name}.")
+            st.download_button(
+                label="Download PDF",
+                data=open(file_name, "rb").read(),
+                file_name=file_name,
+                mime='application/pdf'
+            )
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+
 
 # Free Task logic
 def free_task():
