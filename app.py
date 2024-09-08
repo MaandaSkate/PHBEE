@@ -256,8 +256,8 @@ def main():
     page = st.sidebar.radio("Navigation", ["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task"])
 
     if page == "Home":
-        st.title('PHBEE :rocket:')
-        st.header("AI Powered Educational Chatbot 🏠")
+        st.title('Welcome to PHBEE :rocket:')
+        st.header("Your AI Powered Educational Chatbot 🏠")
         st.markdown('''
         ####
         PHBEE is an AI-powered educational chatbot designed to assist teachers, school administrators, and educational department workers in South Africa by automating the creation of educational materials.
