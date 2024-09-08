@@ -162,7 +162,19 @@ def chatbot():
             display_message(chat['sender'], chat['message'])
         else:
             st.error("Chat history contains invalid data.")
-
+# Function to generate a task description
+def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
+    if task_type == "lesson plan":
+        return (
+            f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
+            f"{curriculum} curriculum. The lesson plan should cover term {num_questions_or_term} and week {total_marks_or_week}."
+        )
+    else:
+        return (
+            f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
+            f"{curriculum} curriculum. The task should include {num_questions_or_term} questions, each with 4 options, "
+            f"and the total marks should sum up to {total_marks_or_week}."
+        )
 # Task Generator logic
 def task_generator():
     st.subheader("Generate Educational Tasks")
