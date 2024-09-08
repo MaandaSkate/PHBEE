@@ -33,7 +33,7 @@ creds = Credentials.from_service_account_info(credentials_info, scopes=scope)
 client = gspread.authorize(creds)
 
 # Open your Google Sheet using the URL
-spreadsheet_url = "https://docs.google.com/spreadsheets/d/1agWBogntjX5egSg1UZK6OiLyAxd269JHc-fQfhLBmQM/edit?gid=0"
+spreadsheet_url = "https://docs.google.com/spreadsheets/d/1WydXwqoXkDq4BTwMSJt7As8cUAafJZTaOUqADIp13sg/edit?usp=sharing"
 sheet = client.open_by_url(spreadsheet_url).worksheet("PHBEE - MVP FEEDBACK")
 
 # Function to initialize Dialogflow client
