@@ -6,3 +6,6 @@ requests
 firebase-admin
 google-auth
 google-cloud-dialogflow-cx
+gspread
+oauth2client
+
