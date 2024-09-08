@@ -253,10 +253,10 @@ def all_classwork():
         else:
             st.error("Please provide all required inputs.")
 	    
+
 # Function to send an email
 def send_email(to_email, subject, body):
-
-    email = st.secrets["email"]["email"]
+    from_email = st.secrets["email"]["email"]
     email_password = st.secrets["email"]["email_password"]
 
     msg = MIMEMultipart()
@@ -268,7 +268,7 @@ def send_email(to_email, subject, body):
     # Sending the email via Gmail's SMTP server
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.starttls()
-    server.login(from_email, password)
+    server.login(from_email, email_password)
     text = msg.as_string()
     server.sendmail(from_email, to_email, text)
     server.quit()
@@ -279,7 +279,7 @@ def submit_feedback(rating, best_feature, feedback, contact_info):
     email_body = f"Rating: {rating}\nBest Feature: {best_feature}\nFeedback: {feedback}\nContact Info: {contact_info}"
     
     # Send feedback via email
-    send_email("maandaskat60@gmail.com", "PHBEE Feedback Submission", email_body)
+    send_email("maandaskate60@gmail.com", "PHBEE Feedback Submission", email_body)
     
     st.success("Thank you for your feedback! We've emailed it to our support team.")
 
@@ -303,55 +303,8 @@ def feedback_form():
     # Submit button
     if st.button("Submit Feedback"):
         submit_feedback(rating, best_feature, feedback, contact_info)
-# Function to send an email
-def send_email(to_email, subject, body):
-    from_email = st.secrets["email"]  # Using secrets for the email
-    password = st.secrets["email_password"]  # Using secrets for the email password
 
-    msg = MIMEMultipart()
-    msg["From"] = from_email
-    msg["To"] = to_email
-    msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
 
-    # Sending the email via Gmail's SMTP server
-    server = smtplib.SMTP("smtp.gmail.com", 587)
-    server.starttls()
-    server.login(from_email, password)
-    text = msg.as_string()
-    server.sendmail(from_email, to_email, text)
-    server.quit()
-
-# Function to submit feedback
-def submit_feedback(rating, best_feature, feedback, contact_info):
-    # Prepare email content
-    email_body = f"Rating: {rating}\nBest Feature: {best_feature}\nFeedback: {feedback}\nContact Info: {contact_info}"
-    
-    # Send feedback via email
-    send_email("maandaskat60@gmail.com", "PHBEE Feedback Submission", email_body)
-    
-    st.success("Thank you for your feedback! We've emailed it to our support team.")
-
-# Feedback form
-def feedback_form():
-    st.subheader("Rate PHBEE the Educational Bot")
-    
-    # 5-star rating input
-    rating = st.slider("How would you rate PHBEE?", 1, 5, value=5)
-    
-    # Best feature ranking input
-    best_feature = st.selectbox("What is PHBEE's best feature?", 
-                                ["Chatbot", "Task Generator", "All Classwork", "Free Task", "Others"])
-    
-    # General feedback input
-    feedback = st.text_area("Any other feedback?")
-    
-    # Contact info (optional)
-    contact_info = st.text_input("Your email or phone number (optional)")
-
-    # Submit button
-    if st.button("Submit Feedback"):
-        submit_feedback(rating, best_feature, feedback, contact_info)
 
 
 
