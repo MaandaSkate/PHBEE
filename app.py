@@ -6,6 +6,8 @@ from fpdf import FPDF
 from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
 from google.cloud import firestore
+import gspread
+from google.oauth2.service_account import Credentials
 import base64
 
 # Set the page configuration
@@ -20,10 +22,19 @@ header {visibility: hidden;}
 </style>
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
+# Define the scope for Google Sheets access
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# Load credentials from Streamlit secrets
+# Get credentials from Streamlit secrets
 credentials_info = st.secrets["google_service_account_key"]
-credentials = service_account.Credentials.from_service_account_info(credentials_info)
+creds = Credentials.from_service_account_info(credentials_info, scopes=scope)
+
+# Authorize gspread client with credentials
+client = gspread.authorize(creds)
+
+# Open your Google Sheet using the URL
+spreadsheet_url = "https://docs.google.com/spreadsheets/d/1WydXwqoXkDq4BTwMSJt7As8cUAafJZTaOUqADIp13sg/edit?usp=sharing"
+sheet = client.open_by_url(spreadsheet_url).worksheet("PHBEE - MVP FEEDBACK")
 
 # Function to initialize Dialogflow client
 def initialize_dialogflow_client(credentials):
