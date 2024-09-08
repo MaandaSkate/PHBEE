@@ -255,8 +255,9 @@ def all_classwork():
 	    
 # Function to send an email
 def send_email(to_email, subject, body):
-    from_email = st.secrets["email"]  # Using secrets for the email
-    password = st.secrets["email_password"]  # Using secrets for the email password
+
+    email = st.secrets["email"]["email"]
+    email_password = st.secrets["email"]["email_password"]
 
     msg = MIMEMultipart()
     msg["From"] = from_email
