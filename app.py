@@ -256,13 +256,20 @@ def main():
     page = st.sidebar.radio("Navigation", ["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task"])
 
     if page == "Home":
-        st.title("Welcome to PHBEE")
-        st.markdown("""
-            PHBEE is your Educational AI assistant designed to assist educational professionals
-            in South Africa by automating the creation of educational materials.
-        """)
-        st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ")  # Replace with actual tutorial video URL
-        st.image("image/PHBEE LOGO FINAL.png", caption="PHBEE Logo")
+        st.header("Welcome to PHBEE!")
+        st.subheader("AI-powered Educational Assistant")
+        st.markdown('''
+        ####
+        PHBEE is an AI-powered educational chatbot designed to assist teachers, school administrators, and educational department workers in South Africa by automating the creation of educational materials.
+
+        PHBEE is trained on both CAPS and IEB standards from grade R to 12. It can help create lesson plans, assessments, marking rubrics, tests, exams, and timetables. Additionally, it assists in creating school management plans, policies, and tracking student progress, ensuring effective communication between schools and parents.
+
+        With PHBEE, you can develop curriculums, frameworks, policies, and procedures based on current regulations. The chatbot helps students with their homework, tasks, and understanding of subject concepts, all aligned with IEB and CAPS standards.
+        ''')
+        st.markdown("#### `Get Started Now!`, find the navigation arrow on the top left")
+        st.video("https://www.youtube.com/watch?v=HlaGFOQ-aLk")
+        st.image("image/PHBEE LOGO FINAL.png", use_column_width=True)
+
 
     elif page == "Chatbot":
         chatbot()
