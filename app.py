@@ -9,6 +9,9 @@ from google.cloud import firestore
 import gspread
 from google.oauth2.service_account import Credentials
 import base64
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Set the page configuration
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
@@ -258,12 +261,38 @@ def all_classwork():
             """, unsafe_allow_html=True)
         else:
             st.error("Please provide all required inputs.")
+	    
+def send_email(to_email, subject, body):
 
+    from_email = st.secrets["email"]
+    password = st.secrets["email_password"]
+
+    msg = MIMEMultipart()
+    msg["From"] = from_email
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain"))
+
+    # Sending the email via Gmail's SMTP server
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(from_email, password)
+    text = msg.as_string()
+    server.sendmail(from_email, to_email, text)
+    server.quit()
 
 # Function to submit feedback
-def submit_feedback(rating, best_feature, feedback):
-    sheet.append_row([rating, best_feature, feedback])
-    st.success("Thank you for your feedback!")
+def submit_feedback(rating, best_feature, feedback, contact_info):
+    # Append feedback to Google Sheet
+    sheet.append_row([rating, best_feature, feedback, contact_info])
+    
+    # Prepare email content
+    email_body = f"Rating: {rating}\nBest Feature: {best_feature}\nFeedback: {feedback}\nContact Info: {contact_info}"
+    
+    # Send feedback via email
+    send_email("maandaskat60@gmail.com", "PHBEE Feedback Submission", email_body)
+    
+    st.success("Thank you for your feedback! We've also emailed it to our support team.")
 
 # Feedback form
 def feedback_form():
@@ -279,11 +308,16 @@ def feedback_form():
     # General feedback input
     feedback = st.text_area("Any other feedback?")
     
+    # Contact info (optional)
+    contact_info = st.text_input("Your email or phone number (optional)")
+
     # Submit button
     if st.button("Submit Feedback"):
-        submit_feedback(rating, best_feature, feedback)
+        submit_feedback(rating, best_feature, feedback, contact_info)
 
-# Add the feedback form to the main application
+
+
+
 
 # Main application logic
 def main():
