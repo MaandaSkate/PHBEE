@@ -180,6 +180,10 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
 def task_generator():
     st.subheader("Generate Educational Tasks")
     
+    # Ensure session_id is initialized
+    if 'session_id' not in st.session_state:
+        st.session_state['session_id'] = generate_session_id()
+
     task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
     subject = st.text_input("Subject")
     grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
@@ -222,6 +226,7 @@ def task_generator():
             )
         except Exception as e:
             st.error(f"An error occurred: {e}")
+
 
 
 # Free Task logic
