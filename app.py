@@ -63,6 +63,7 @@ def img_to_base64(image_path):
 def generate_session_id():
     return f"session_{datetime.datetime.now().timestamp()}"
 
+
 def create_pdf(task_description, response_text, file_name, task_type):
     pdf = FPDF()
     pdf.add_page()
@@ -180,6 +181,7 @@ def task_generator():
         task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
         response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
         file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
         create_pdf(task_description, response_text, file_name, task_type)
         st.success(f"Task generated and saved as {file_name}.")
         st.download_button(label="Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime='application/pdf')
@@ -194,6 +196,7 @@ def free_task():
         if request_text.strip():
             with st.spinner("Generating..."):
                 response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], request_text)
+                
                 pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 create_pdf(request_text, response_text, pdf_file_name, "Free Task")
 
@@ -231,8 +234,8 @@ def all_classwork():
 
             st.markdown(f"**Generated {task_type}:** {task_description}")
             st.markdown(f"**Response:** {response_text}")
-
-            pdf_file_name = f"{task_type}_{subject}_Grade_{grade}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
             create_pdf(task_description, response_text, pdf_file_name, task_type)
 
             st.markdown(f"""
