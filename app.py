@@ -6,6 +6,8 @@ from fpdf import FPDF
 from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
 from google.cloud import firestore
+import gspread
+from google.oauth2.service_account import Credentials
 import base64
 
 # Set the page configuration
@@ -248,13 +250,39 @@ def all_classwork():
         else:
             st.error("Please provide all required inputs.")
 
+
+# Function to submit feedback
+def submit_feedback(rating, best_feature, feedback):
+    sheet.append_row([rating, best_feature, feedback])
+    st.success("Thank you for your feedback!")
+
+# Feedback form
+def feedback_form():
+    st.subheader("Rate PHBEE the Educational Bot")
+    
+    # 5-star rating input
+    rating = st.slider("How would you rate PHBEE?", 1, 5, value=5)
+    
+    # Best feature ranking input
+    best_feature = st.selectbox("What is PHBEE's best feature?", 
+                                ["Chatbot", "Task Generator", "All Classwork", "Free Task", "Others"])
+    
+    # General feedback input
+    feedback = st.text_area("Any other feedback?")
+    
+    # Submit button
+    if st.button("Submit Feedback"):
+        submit_feedback(rating, best_feature, feedback)
+
+# Add the feedback form to the main application
+
 # Main application logic
 def main():
     st.sidebar.title("PHBEE Educational AI")
     st.sidebar.image("image/PHBEE LOGO FINAL.png", use_column_width=True)
 
-    page = st.sidebar.radio("Navigation", ["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task"])
-
+    page = st.sidebar.radio("Navigation", ["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task", "Feedback"])
+    
     if page == "Home":
         st.title('Welcome to PHBEE :rocket:')
         st.header("Your AI Powered Educational Chatbot 🏠")
@@ -282,6 +310,9 @@ def main():
 
     elif page == "Free Task":
         free_task()
+	
+    elif page == "Feedback":
+        feedback_form()
 
 if __name__ == "__main__":
     main()
