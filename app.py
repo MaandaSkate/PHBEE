@@ -254,7 +254,7 @@ def all_classwork():
             st.error("Please provide all required inputs.")
 	    
 
-# Function to send an email
+
 def send_email(to_email, subject, body):
     from_email = st.secrets["email"]["email"]
     email_password = st.secrets["email"]["email_password"]
@@ -265,13 +265,18 @@ def send_email(to_email, subject, body):
     msg["Subject"] = subject
     msg.attach(MIMEText(body, "plain"))
 
-    # Sending the email via Gmail's SMTP server
-    server = smtplib.SMTP("smtp.gmail.com", 587)
-    server.starttls()
-    server.login(from_email, email_password)
-    text = msg.as_string()
-    server.sendmail(from_email, to_email, text)
-    server.quit()
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(from_email, email_password)
+        server.sendmail(from_email, to_email, msg.as_string())
+        server.quit()
+        st.success("Email sent successfully!")
+    except smtplib.SMTPAuthenticationError as e:
+        st.error(f"Authentication error: {e}")
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+
 
 # Function to submit feedback
 def submit_feedback(rating, best_feature, feedback, contact_info):
