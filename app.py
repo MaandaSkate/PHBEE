@@ -172,8 +172,8 @@ def task_generator():
         num_questions_or_term = term
         total_marks_or_week = week
     else:
-        num_questions = st.slider("Number of Questions", 1, 100)
-        total_marks = st.slider("Total Marks", 1, 1000)
+        num_questions = st.slider("Number of Questions", 1, 10)
+        total_marks = st.slider("Total Marks", 1, 100)
         num_questions_or_term = num_questions
         total_marks_or_week = total_marks
 
@@ -223,7 +223,7 @@ def all_classwork():
     grade = st.number_input("Select grade", min_value=1, max_value=12, step=1)
     curriculum = st.radio("Select curriculum", ["CAPS", "IEB"])
 
-    num_questions = st.slider("Number of questions", min_value=1, max_value=50)
+    num_questions = st.slider("Number of questions", min_value=1, max_value=10)
     total_marks = st.slider("Total marks", min_value=1, max_value=100)
 
     if st.button("Generate Classwork"):
@@ -256,8 +256,8 @@ def main():
     page = st.sidebar.radio("Navigation", ["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task"])
 
     if page == "Home":
-        st.header("Welcome to PHBEE!")
-        st.subheader("AI-powered Educational Assistant")
+        st.title('PHBEE :rocket:')
+        st.header("AI Powered Educational Chatbot 🏠")
         st.markdown('''
         ####
         PHBEE is an AI-powered educational chatbot designed to assist teachers, school administrators, and educational department workers in South Africa by automating the creation of educational materials.
