@@ -3,10 +3,9 @@ import streamlit as st
 import datetime
 import random
 from fpdf import FPDF
-from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx, firestore
+from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
 from google.cloud import firestore
-import json
 import base64
 
 # Set the page configuration
@@ -20,14 +19,7 @@ footer {visibility: hidden;}
 header {visibility: hidden;}
 </style>
 """
-
 st.markdown(hide_st_style, unsafe_allow_html=True)
-
-import os
-import streamlit as st
-from google.oauth2 import service_account
-from google.cloud import dialogflowcx_v3 as dialogflow_cx
-from google.cloud import firestore
 
 # Load credentials from Streamlit secrets
 credentials_info = st.secrets["google_service_account_key"]
@@ -53,48 +45,20 @@ language_code = "en"
 client = initialize_dialogflow_client(credentials)
 db = initialize_firestore_client(credentials, project_id)
 
-# You can now use `client` to interact with Dialogflow and `db` to interact with Firestore
-# Home Page Display Function
-def display_home_page():
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.title('PHBEE :rocket:')
-        st.header("AI Powered Educational Chatbot 🏠")
-        st.divider()
-        st.header("About :memo:")
-        st.markdown('''
-        ####
-        PHBEE is an AI-powered educational chatbot designed to assist teachers, school administrators, and educational department workers in South Africa by automating the creation of educational materials.
-
-        PHBEE is trained on both CAPS and IEB standards from grade R to 12. It can help create lesson plans, assessments, marking rubrics, tests, exams, and timetables. It also assists in building school management plans, and policies, and tracking student progress, ensuring effective communication between schools and parents.
-
-        With PHBEE, you can develop curriculums, frameworks, policies, and procedures based on current regulations. The chatbot helps students with their homework, tasks, and understanding of subject concepts, all aligned with IEB and CAPS standards. AFTER WATCHING THE VIDEO, PLEASE GO TO THE LEFT TOP CORNER OF THE PAGE, CLICK THE NAVIGATION ARROW AND ENJOY ALL THE FEATURES.
-        ''')
-        
-        # Add the YouTube video
-        st.header("How the App Works")
-        st.video("https://youtu.be/HlaGFOQ-aLk")
-    with col2:
-        st.image("image/PHBEE LOGO FINAL.png")  # Update with the correct path to your image
-
-
-
+# Helper functions
 def img_to_base64(image_path):
     try:
-        # Ensure the image path is valid
         if not os.path.isfile(image_path):
             raise FileNotFoundError(f"The file {image_path} does not exist.")
-        
         with open(image_path, "rb") as img_file:
             img_data = img_file.read()
         return base64.b64encode(img_data).decode('utf-8')
     except FileNotFoundError as e:
         st.error(f"Error: {str(e)}")
-        # Return a placeholder image if file is not found
-        return base64.b64encode(b'').decode('utf-8')  # Placeholder for missing image
+        return base64.b64encode(b'').decode('utf-8')
     except Exception as e:
         st.error(f"An unexpected error occurred: {str(e)}")
-        return base64.b64encode(b'').decode('utf-8')  # Placeholder for missing image
+        return base64.b64encode(b'').decode('utf-8')
 
 def generate_session_id():
     return f"session_{datetime.datetime.now().timestamp()}"
@@ -107,13 +71,13 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
     pdf.ln(10)
 
-    pdf.set_fill_color(200, 220, 255)  # Light blue background
+    pdf.set_fill_color(200, 220, 255)
     pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
     pdf.set_xy(10, 40)
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
 
-    if task_type != "lesson plan":  # Add memo for all tasks except lesson plan
+    if task_type != "lesson plan":
         memo = create_memo(response_text)
         pdf.ln(10)
         pdf.set_xy(10, pdf.get_y())
@@ -159,6 +123,7 @@ def create_memo(response_text):
             memo += question + "\n"
     return memo
 
+# Chatbot logic
 def chatbot():
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
@@ -192,73 +157,126 @@ def chatbot():
         else:
             st.error("Chat history contains invalid data.")
 
-def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
-    if task_type == "lesson plan":
-        return (
-            f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
-            f"{curriculum} curriculum. The lesson plan should cover term {num_questions_or_term} and week {total_marks_or_week}."
-        )
+# Task Generator logic
+def task_generator():
+    st.subheader("Generate Educational Tasks")
+    task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
+    subject = st.text_input("Subject")
+    grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
+    curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
+
+    if task_type == "Lesson Plan":
+        term = st.slider("Term", 1, 4)
+        week = st.slider("Week", 1, 10)
+        num_questions_or_term = term
+        total_marks_or_week = week
     else:
-        return (
-            f"Create a detailed {task_type} for the {subject} subject, targeting grade {grade} students under the "
-            f"{curriculum} curriculum. The task should include {num_questions_or_term} questions, each with 4 options, "
-            f"and the total marks should sum up to {total_marks_or_week}."
-        )
+        num_questions = st.slider("Number of Questions", 1, 100)
+        total_marks = st.slider("Total Marks", 1, 1000)
+        num_questions_or_term = num_questions
+        total_marks_or_week = total_marks
 
-# Main Function
-def main():
-    st.sidebar.title("PHBEE Educational Tools")
-    menu = ["Home", "Chatbot", "Task Generator"]
-    choice = st.sidebar.selectbox("Select an Option", menu)
-    # Ensure session_id is initialized
-    if 'session_id' not in st.session_state:
-        st.session_state['session_id'] = generate_session_id()
-    
-    if choice == "Home":
-        display_home_page()
-    elif choice == "Chatbot":
-        chatbot()
-    elif choice == "Task Generator":
-        st.subheader("Generate Educational Tasks")
-        task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
-        subject = st.text_input("Subject")
-        grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
-        curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
+    if st.button("Generate Task"):
+        task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
+        response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
+        file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        create_pdf(task_description, response_text, file_name, task_type)
+        st.success(f"Task generated and saved as {file_name}.")
+        st.download_button(label="Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime='application/pdf')
 
-        if task_type == "Lesson Plan":
-            term = st.slider("Term", 1, 4)
-            week = st.slider("Week", 1, 10)
-            num_questions_or_term = term
-            total_marks_or_week = week
+# Free Task logic
+def free_task():
+    st.subheader("Free Task")
+    st.markdown("Generate a custom PDF based on your request.")
+
+    request_text = st.text_area("Enter your request")
+    if st.button("Generate Free Task"):
+        if request_text.strip():
+            with st.spinner("Generating..."):
+                response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], request_text)
+                pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_pdf(request_text, response_text, pdf_file_name, "Free Task")
+
+                st.markdown(f"**Generated PDF:** {request_text}")
+                st.markdown(f"**Response:** {response_text}")
+
+                st.markdown(f"""
+                    <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
+                    <div style="background-color: #FFCC00; color: white; padding: 10px; border-radius: 5px; text-align: center; max-width: 200px;">
+                        Download {pdf_file_name}
+                    </div>
+                    </a>
+                """, unsafe_allow_html=True)
         else:
-            num_questions = st.slider("Number of Questions", 1, 50)
-            total_marks = st.slider("Total Marks", 1, 100)
-            num_questions_or_term = num_questions
-            total_marks_or_week = total_marks
+            st.error("Please enter a valid request.")
 
-        if st.button("Generate Task"):
-            # Clear chat history for a fresh response
-            st.session_state['chat_history'] = []
+# All Classwork logic
+def all_classwork():
+    st.subheader("All Classwork")
+    st.markdown("Generate a variety of classwork-related tasks.")
 
-            task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
+    task_type = st.selectbox("Select classwork type", ["Homework", "Worksheet", "Class Exercise", "Quiz", "Teaching Admin Task"])
+    subject = st.text_input("Enter subject name", placeholder="e.g., English, Math")
+    grade = st.number_input("Select grade", min_value=1, max_value=12, step=1)
+    curriculum = st.radio("Select curriculum", ["CAPS", "IEB"])
 
-            with st.spinner('Generating your task...'):
+    num_questions = st.slider("Number of questions", min_value=1, max_value=50)
+    total_marks = st.slider("Total marks", min_value=1, max_value=100)
+
+    if st.button("Generate Classwork"):
+        if subject and grade and curriculum:
+            task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions, total_marks)
+            with st.spinner("Generating..."):
                 response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
-                file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                create_pdf(task_description, response_text, file_name, task_type)
 
-            # Display the task response
-            st.header("Generated Task Response")
-            st.write(response_text)
+            st.markdown(f"**Generated {task_type}:** {task_description}")
+            st.markdown(f"**Response:** {response_text}")
 
-            st.success(f"Task generated and saved as {file_name}.")
-            
-            # Add download button with balloons
-            if st.download_button(label="Download PDF", data=open(file_name, "rb").read(), file_name=file_name, mime='application/pdf'):
-                st.balloons()
+            pdf_file_name = f"{task_type}_{subject}_Grade_{grade}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            create_pdf(task_description, response_text, pdf_file_name, task_type)
+
+            st.markdown(f"""
+                <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
+                <div style="background-color: #FFCC00; color: white; padding: 10px; border-radius: 5px; text-align: center; max-width: 200px;">
+                    Download {pdf_file_name}
+                </div>
+                </a>
+            """, unsafe_allow_html=True)
+        else:
+            st.error("Please provide all required inputs.")
+
+# Main application logic
+def main():
+    st.sidebar.title("PHBEE Educational AI")
+    st.sidebar.image("image/PHBEE LOGO FINAL.png", use_column_width=True)
+
+    page = st.sidebar.radio("Navigation", ["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task"])
+
+    if page == "Home":
+        st.title("Welcome to PHBEE")
+        st.markdown("""
+            PHBEE is your Educational AI assistant designed to assist educational professionals
+            in South Africa by automating the creation of educational materials.
+        """)
+        st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ")  # Replace with actual tutorial video URL
+        st.image("image/PHBEE LOGO FINAL.png", caption="PHBEE Logo")
+
+    elif page == "Chatbot":
+        chatbot()
+
+    elif page == "Task Generator":
+        task_generator()
+
+    elif page == "All Classwork":
+        all_classwork()
+
+    elif page == "Free Task":
+        free_task()
 
 if __name__ == "__main__":
     main()
+
+
 
 
 
