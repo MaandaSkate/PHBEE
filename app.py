@@ -355,12 +355,6 @@ def feedback_form():
         submit_feedback(rating, best_feature, feedback, contact_info)
 
 
-
-
-
-
-
-# Main application logic
 def main():
     st.sidebar.title("PHBEE Educational AI")
     st.sidebar.image("image/PHBEE LOGO FINAL.png", use_column_width=True)
@@ -382,7 +376,6 @@ def main():
         st.video("https://www.youtube.com/watch?v=HlaGFOQ-aLk")
         st.image("image/PHBEE LOGO FINAL.png", use_column_width=True)
 
-
     elif page == "Chatbot":
         chatbot()
 
@@ -394,18 +387,18 @@ def main():
 
     elif page == "Free Task":
         free_task()
-	
+
     elif page == "Feedback":
         feedback_form()
 
 if __name__ == "__main__":
     main()
-	
-    elif page == "Feedback":
-        feedback_form()
 
-if __name__ == "__main__":
-    main()
+
+
+
+
+
 
 
 
