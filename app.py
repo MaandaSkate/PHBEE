@@ -400,6 +400,12 @@ def main():
 
 if __name__ == "__main__":
     main()
+	
+    elif page == "Feedback":
+        feedback_form()
+
+if __name__ == "__main__":
+    main()
 
 
 
