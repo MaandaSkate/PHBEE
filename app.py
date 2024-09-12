@@ -307,8 +307,12 @@ def all_classwork():
 
 
 def send_email(to_email, subject, body):
-    from_email = st.secrets["email"]["email"]
-    email_password = st.secrets["email"]["email_password"]
+    try:
+        from_email = st.secrets["email"]["email"]
+        email_password = st.secrets["email"]["email_password"]
+    except KeyError as e:
+        st.error(f"Error: Missing secret key {e}")
+        return
 
     msg = MIMEMultipart()
     msg["From"] = from_email
@@ -327,6 +331,7 @@ def send_email(to_email, subject, body):
         st.error(f"Authentication error: {e}")
     except Exception as e:
         st.error(f"An error occurred: {e}")
+
 
 
 # Function to submit feedback
