@@ -143,12 +143,16 @@ def chatbot():
     if not st.session_state['chat_history']:
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
-    user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
-    
+    # Create an input field with key "input"
+    input_placeholder = st.empty()  # Create an empty placeholder for the input field
+    user_input = input_placeholder.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
+
     if st.button("Send"):
         if user_input:
             with st.spinner('Processing...'):
                 response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
+            
+            # Display messages
             display_message("user", user_input)
             display_message("PHBEE", response)
 
@@ -156,11 +160,12 @@ def chatbot():
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            # Clear input field after sending message
-            st.session_state["input"] = ""
+            # Clear input field
+            input_placeholder.empty()  # Clear the input field
 
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
+        input_placeholder.empty()  # Clear the input field
 
     # Display chat history
     for chat in st.session_state['chat_history']:
@@ -168,6 +173,7 @@ def chatbot():
             display_message(chat['sender'], chat['message'])
         else:
             st.error("Chat history contains invalid data.")
+
 
 # Function to generate a task description
 def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
