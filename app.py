@@ -137,13 +137,16 @@ def chatbot():
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = generate_session_id()
 
+    if 'user_input' not in st.session_state:
+        st.session_state['user_input'] = ""
+
     st.title("Chat with PHBEE 🐝")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
     if not st.session_state['chat_history']:
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
-    user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
+    user_input = st.text_input("Type your message here:", key="user_input", placeholder="Ask me anything...")
     
     if st.button("Send"):
         if user_input:
@@ -157,7 +160,7 @@ def chatbot():
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
             # Clear input field after sending message
-            st.session_state["input"] = ""
+            st.session_state['user_input'] = ""
 
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
@@ -168,6 +171,7 @@ def chatbot():
             display_message(chat['sender'], chat['message'])
         else:
             st.error("Chat history contains invalid data.")
+
 
 # Function to generate a task description
 def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
