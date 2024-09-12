@@ -24,11 +24,9 @@ header {visibility: hidden;}
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
 
-
 # Load credentials from Streamlit secrets
 credentials_info = st.secrets["google_service_account_key"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
-
 
 # Function to initialize Dialogflow client
 def initialize_dialogflow_client(credentials):
@@ -43,8 +41,6 @@ def initialize_firestore_client(credentials, project_id):
 # Define the Dialogflow parameters
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
-session_id = "123456789"
-language_code = "en"
 
 # Initialize clients
 client = initialize_dialogflow_client(credentials)
@@ -67,7 +63,6 @@ def img_to_base64(image_path):
 
 def generate_session_id():
     return f"session_{datetime.datetime.now().timestamp()}"
-
 
 def create_pdf(task_description, response_text, file_name, task_type):
     pdf = FPDF()
@@ -137,9 +132,6 @@ def chatbot():
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = generate_session_id()
 
-    if 'user_input' not in st.session_state:
-        st.session_state['user_input'] = ""
-
     st.title("Chat with PHBEE 🐝")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
@@ -147,7 +139,7 @@ def chatbot():
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
     user_input = st.text_input("Type your message here:", key="user_input", placeholder="Ask me anything...")
-    
+
     if st.button("Send"):
         if user_input:
             with st.spinner('Processing...'):
@@ -160,10 +152,11 @@ def chatbot():
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
             # Clear input field after sending message
-            st.session_state['user_input'] = ""
+            st.experimental_rerun()
 
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
+        st.experimental_rerun()
 
     # Display chat history
     for chat in st.session_state['chat_history']:
@@ -171,6 +164,41 @@ def chatbot():
             display_message(chat['sender'], chat['message'])
         else:
             st.error("Chat history contains invalid data.")
+
+# Task Generator logic
+def task_generator():
+    st.subheader("Generate Educational Tasks")
+
+    if 'session_id' not in st.session_state:
+        st.session_state['session_id'] = generate_session_id()
+
+    task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
+    subject = st.text_input("Subject")
+    grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
+    curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
+
+    if task_type == "Lesson Plan":
+        term = st.slider("Term", 1, 4)
+        week = st.slider("Week", 1, 10)
+        num_questions_or_term = term
+        total_marks_or_week = week
+    else:
+        num_questions = st.slider("Number of Questions", 1, 50)
+        total_marks = st.slider("Total Marks", 1, 100)
+        num_questions_or_term = num_questions
+        total_marks_or_week = total_marks
+
+    if st.button("Generate Task"):
+        try:
+            # Generate task description and detect intent
+            task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
+            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description, "en")
+            file_name = f"{task_type}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            create_pdf(task_description, response_text, file_name, task_type)
+            st.success(f"Task generated successfully. [Download PDF]({file_name})")
+        except Exception as e:
+            st.error(f"Error generating task: {str(e)}")
+
 
 
 # Function to generate a task description
