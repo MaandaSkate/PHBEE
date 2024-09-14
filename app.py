@@ -274,35 +274,68 @@ def all_classwork():
     st.subheader("All Classwork")
     st.markdown("Generate a variety of classwork-related tasks.")
 
-    task_type = st.selectbox("Select classwork type", ["Homework", "Worksheet", "Class Exercise", "Quiz", "Teaching Admin Task"])
+    # Task type options
+    task_type = st.selectbox("Select classwork type", ["Homework", "Worksheet", "Class Exercise", "Quiz", "Teaching Admin Task", "Explainer", "Summary"])
+
+    # Common inputs
     subject = st.text_input("Enter subject name", placeholder="e.g., English, Math")
     grade = st.number_input("Select grade", min_value=1, max_value=12, step=1)
     curriculum = st.radio("Select curriculum", ["CAPS", "IEB"])
 
-    num_questions = st.slider("Number of questions", min_value=1, max_value=10)
-    total_marks = st.slider("Total marks", min_value=1, max_value=100)
+    # Handle Explainer and Summary differently (no marks, focus on concepts)
+    if task_type in ["Explainer", "Summary"]:
+        explanation_topic = st.text_area("Enter the topic or concept to be explained", placeholder="e.g., Pythagorean Theorem")
+        if st.button(f"Generate {task_type}"):
+            if subject and grade and curriculum and explanation_topic:
+                task_description = f"Create a detailed {task_type} on {explanation_topic} for {subject} (Grade {grade}, {curriculum}). Focus on explaining the concept in a clear and engaging way."
+                with st.spinner("Generating..."):
+                    response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
-    if st.button("Generate Classwork"):
-        if subject and grade and curriculum:
-            task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions, total_marks)
-            with st.spinner("Generating..."):
-                response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
+                st.markdown(f"**Generated {task_type}:** {task_description}")
+                st.markdown(f"**Response:** {response_text}")
+                
+                # Generate PDF
+                pdf_file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_pdf(task_description, response_text, pdf_file_name, task_type)
 
-            st.markdown(f"**Generated {task_type}:** {task_description}")
-            st.markdown(f"**Response:** {response_text}")
-            file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-            pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-            create_pdf(task_description, response_text, pdf_file_name, task_type)
-
-            st.markdown(f"""
+                # Provide a download link for the PDF
+                st.markdown(f"""
                 <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
                 <div style="background-color: #FFCC00; color: white; padding: 10px; border-radius: 5px; text-align: center; max-width: 200px;">
-                    Download {pdf_file_name}
+                Download {pdf_file_name}
                 </div>
                 </a>
-            """, unsafe_allow_html=True)
-        else:
-            st.error("Please provide all required inputs.")
+                """, unsafe_allow_html=True)
+            else:
+                st.error("Please provide all required inputs.")
+    else:
+        # Existing task logic for other task types
+        num_questions = st.slider("Number of questions", min_value=1, max_value=10)
+        total_marks = st.slider("Total marks", min_value=1, max_value=100)
+        if st.button(f"Generate {task_type}"):
+            if subject and grade and curriculum:
+                task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions, total_marks)
+                with st.spinner("Generating..."):
+                    response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
+
+                st.markdown(f"**Generated {task_type}:** {task_description}")
+                st.markdown(f"**Response:** {response_text}")
+                
+                # Generate PDF
+                pdf_file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_pdf(task_description, response_text, pdf_file_name, task_type)
+
+                # Provide a download link for the PDF
+                st.markdown(f"""
+                <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
+                <div style="background-color: #FFCC00; color: white; padding: 10px; border-radius: 5px; text-align: center; max-width: 200px;">
+                Download {pdf_file_name}
+                </div>
+                </a>
+                """, unsafe_allow_html=True)
+            else:
+                st.error("Please provide all required inputs.")
+
 	    
 
 
