@@ -136,6 +136,9 @@ def create_memo(response_text):
     return memo
 
 # Chatbot logic
+def clear_input():
+    st.session_state['input'] = ""
+
 def chatbot():
     # Initialize session state variables
     initialize_session_state()
@@ -149,7 +152,7 @@ def chatbot():
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
     # Input field for user input
-    user_input = st.text_input("Type your message here:", value="", key="input", placeholder="Ask me anything...")
+    user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
 
     # Handle message sending
     if st.button("Send") or user_input:
@@ -165,8 +168,8 @@ def chatbot():
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            # Clear input field by setting session state
-            st.session_state['input'] = ""  # This ensures the input box is cleared on the next render
+            # Clear input field using the callback
+            clear_input()
 
     # Clear chat history
     if st.button("Clear Chat"):
@@ -176,6 +179,7 @@ def chatbot():
     for chat in st.session_state['chat_history']:
         if 'sender' in chat and 'message' in chat:
             display_message(chat['sender'], chat['message'])
+
 
 
 # Function to generate a task description
