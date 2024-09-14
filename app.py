@@ -144,36 +144,49 @@ def chatbot():
     if not st.session_state['chat_history']:
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
-    # Create an input field with key "input"
-    input_placeholder = st.empty()  # Create an empty placeholder for the input field
-    user_input = input_placeholder.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
+    # Input field with 'Enter' to send the message
+    user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...", on_change=lambda: send_message(user_input=st.session_state['input']))
 
-    if st.button("Send"):
+    # Automatically clear the input field after sending the message
+    def send_message(user_input):
         if user_input:
             with st.spinner('Processing...'):
                 response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
             
-            # Display messages
-            display_message("user", user_input)
-            display_message("PHBEE", response)
-
             # Append to chat history
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            # Clear input field
-            input_placeholder.empty()  # Clear the input field
+            # Clear input field after message is sent
+            st.session_state['input'] = ""
 
-    if st.button("Clear Chat"):
-        st.session_state['chat_history'] = []
-        input_placeholder.empty()  # Clear the input field
-
-    # Display chat history
+    # Display chat history in a WhatsApp-like style
     for chat in st.session_state['chat_history']:
         if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
             display_message(chat['sender'], chat['message'])
-        else:
-            st.error("Chat history contains invalid data.")
+
+    if st.button("Clear Chat"):
+        st.session_state['chat_history'] = []
+
+# Helper function to format messages like WhatsApp
+def display_message(sender, message):
+    if sender == "user":
+        st.markdown(f'''
+        <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 10px;">
+            <div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; word-wrap: break-word;">
+                {message}
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+    else:
+        st.markdown(f'''
+        <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
+            <div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; word-wrap: break-word;">
+                {message}
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
 
 
 # Function to generate a task description
