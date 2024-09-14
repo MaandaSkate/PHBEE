@@ -30,14 +30,6 @@ credentials_info = st.secrets["google_service_account_key"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
 
-def initialize_session_state():
-    """Initialize session state variables if they do not exist."""
-    if 'chat_history' not in st.session_state:
-        st.session_state['chat_history'] = []
-    if 'session_id' not in st.session_state:
-        st.session_state['session_id'] = f"session_{datetime.datetime.now().timestamp()}"
-    if 'input' not in st.session_state:
-        st.session_state['input'] = ""
 
 # Function to initialize Dialogflow client
 def initialize_dialogflow_client(credentials):
