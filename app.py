@@ -142,57 +142,42 @@ def chatbot():
     st.title("Chat with PHBEE 🐝")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
+    # Initial bot greeting if no history exists
     if not st.session_state['chat_history']:
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
-    # Function to process the message
-    def send_message():
-        user_input = st.session_state['input']  # Access the input value
+    # Input field for user input with Enter key support
+    input_placeholder = st.empty()  # Placeholder for the input field
+    user_input = input_placeholder.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
+
+    # Send button and Enter key support
+    if st.button("Send") or user_input:  # User can either press 'Send' or hit 'Enter'
         if user_input:
             with st.spinner('Processing...'):
                 response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
-            
-            # Append user and bot messages to chat history
+
+            # Display user and bot messages
+            display_message("user", user_input)
+            display_message("PHBEE", response)
+
+            # Append both messages to the chat history
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
             # Clear input field after sending the message
-            st.session_state['input'] = ""
-
-    # Input field with Enter to send and a Send button
-    user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...", on_change=send_message)
-
-    # Send button to manually trigger sending the message
-    if st.button("Send"):
-        send_message()
-
-    # Display chat history in WhatsApp-like style
-    for chat in st.session_state['chat_history']:
-        if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
-            display_message(chat['sender'], chat['message'])
+            st.session_state['input'] = ""  # Clear the input field
 
     # Clear chat history button
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
 
-# Helper function to format messages like WhatsApp
-def display_message(sender, message):
-    if sender == "user":
-        st.markdown(f'''
-        <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 10px;">
-            <div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; word-wrap: break-word;">
-                {message}
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
-    else:
-        st.markdown(f'''
-        <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
-            <div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; word-wrap: break-word;">
-                {message}
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
+    # Display chat history
+    for chat in st.session_state['chat_history']:
+        if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
+            display_message(chat['sender'], chat['message'])
+        else:
+            st.error("Chat history contains invalid data.")
+
 
 
 
