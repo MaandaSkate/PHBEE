@@ -213,8 +213,10 @@ def task_generator():
         num_questions_or_term = num_questions
         total_marks_or_week = total_marks
 
-    if st.button("Generate Task"):
-        try:
+if st.button("Generate Task"):
+    try:
+        # Show a spinner while the task is being generated
+        with st.spinner('Generating task, please wait...'):
             # Generate task description and detect intent
             task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
             response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
@@ -228,17 +230,23 @@ def task_generator():
             # Create the PDF file
             file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
             create_pdf(task_description, response_text, file_name, task_type)
-            
-            # Provide a download button after displaying the response
-            st.success(f"Task generated and saved as {file_name}.")
-            st.download_button(
-                label="Download PDF",
-                data=open(file_name, "rb").read(),
-                file_name=file_name,
-                mime='application/pdf'
-            )
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+
+        # Provide a download button after displaying the response
+        st.success(f"Task generated and saved as {file_name}.")
+        
+        # Show balloons when the task is ready for download
+        st.balloons()
+
+        # Provide download button for the generated PDF
+        st.download_button(
+            label="Download PDF",
+            data=open(file_name, "rb").read(),
+            file_name=file_name,
+            mime='application/pdf'
+        )
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+
 
 
 
