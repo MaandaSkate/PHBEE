@@ -30,6 +30,10 @@ credentials_info = st.secrets["google_service_account_key"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
 
+def generate_session_id():
+    # Function to generate a unique session ID
+    import uuid
+    return str(uuid.uuid4())
 
 # Function to initialize Dialogflow client
 def initialize_dialogflow_client(credentials):
@@ -191,10 +195,6 @@ def chatbot():
         else:
             st.error("Chat history contains invalid data.")
 
-def generate_session_id():
-    # Function to generate a unique session ID
-    import uuid
-    return str(uuid.uuid4())
 
 
 
