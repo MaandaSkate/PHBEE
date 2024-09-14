@@ -274,6 +274,10 @@ def all_classwork():
     st.subheader("All Classwork")
     st.markdown("Generate a variety of classwork-related tasks.")
 
+    # Ensure session_id is initialized
+    if 'session_id' not in st.session_state:
+        st.session_state['session_id'] = generate_session_id()
+
     # Task type options
     task_type = st.selectbox("Select classwork type", ["Homework", "Worksheet", "Class Exercise", "Quiz", "Teaching Admin Task", "Explainer", "Summary"])
 
@@ -335,6 +339,7 @@ def all_classwork():
                 """, unsafe_allow_html=True)
             else:
                 st.error("Please provide all required inputs.")
+
 
 	    
 
