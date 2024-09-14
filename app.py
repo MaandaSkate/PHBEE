@@ -145,12 +145,8 @@ def chatbot():
     st.title("Chat with PHBEE")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
-    if not st.session_state['chat_history']:
-        display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
-
     # Create an input field with key "input"
-    input_placeholder = st.empty()  # Create an empty placeholder for the input field
-    user_input = input_placeholder.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
+    user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
 
     if st.button("Send"):
         if user_input:
@@ -167,11 +163,11 @@ def chatbot():
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
             # Clear input field
-            input_placeholder.empty()
+            st.session_state['input'] = ""  # Clear the input field
 
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
-        input_placeholder.empty()  # Clear the input field
+        st.session_state['input'] = ""  # Clear the input field
 
     # Display chat history
     for chat in st.session_state['chat_history']:
@@ -179,6 +175,7 @@ def chatbot():
             display_message(chat['sender'], chat['message'])
         else:
             st.error("Chat history contains invalid data.")
+
 
 
 
