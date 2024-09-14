@@ -1,8 +1,8 @@
-import os  # Import os module
+import os
 import streamlit as st
 from streamlit_option_menu import option_menu
 import datetime
-import random
+import uuid
 from fpdf import FPDF
 from google.cloud import dialogflowcx_v3beta1 as dialogflow_cx
 from google.oauth2 import service_account
@@ -29,32 +29,25 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 credentials_info = st.secrets["google_service_account_key"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
-
-def generate_session_id():
-    # Function to generate a unique session ID
-    import uuid
-    return str(uuid.uuid4())
-
-# Function to initialize Dialogflow client
-def initialize_dialogflow_client(credentials):
-    client = dialogflow_cx.SessionsClient(credentials=credentials)
-    return client
-
-# Function to initialize Firestore client
-def initialize_firestore_client(credentials, project_id):
-    client = firestore.Client(credentials=credentials, project=project_id)
-    return client
-
 # Define the Dialogflow parameters
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
 language_code = "en"
 
 # Initialize clients
+def initialize_dialogflow_client(credentials):
+    return dialogflow_cx.SessionsClient(credentials=credentials)
+
+def initialize_firestore_client(credentials, project_id):
+    return firestore.Client(credentials=credentials, project=project_id)
+
 client = initialize_dialogflow_client(credentials)
 db = initialize_firestore_client(credentials, project_id)
 
 # Helper functions
+def generate_session_id():
+    return str(uuid.uuid4())
+
 def img_to_base64(image_path):
     try:
         if not os.path.isfile(image_path):
@@ -68,9 +61,6 @@ def img_to_base64(image_path):
     except Exception as e:
         st.error(f"An unexpected error occurred: {str(e)}")
         return base64.b64encode(b'').decode('utf-8')
-
-def generate_session_id():
-    return f"session_{datetime.datetime.now().timestamp()}"
 
 def create_pdf(task_description, response_text, file_name, task_type):
     pdf = FPDF()
@@ -137,8 +127,6 @@ def create_memo(response_text):
     return memo
 
 # Chatbot logic
-
-# Main chatbot function
 def chatbot():
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
