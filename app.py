@@ -136,7 +136,7 @@ def generate_session_id():
 
 
 
-ef chatbot():
+def chatbot():
     """Main function to handle the chatbot interaction."""
     # Initialize chat history and session ID
     if 'chat_history' not in st.session_state:
