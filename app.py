@@ -136,49 +136,50 @@ def create_memo(response_text):
     return memo
 
 # Chatbot logic
-def clear_input():
-    st.session_state['input'] = ""
-
 def chatbot():
-    # Initialize session state variables
-    initialize_session_state()
+    if 'chat_history' not in st.session_state:
+        st.session_state['chat_history'] = []
+    if 'session_id' not in st.session_state:
+        st.session_state['session_id'] = generate_session_id()
 
-    # Display chatbot title and greeting
-    st.title("Chat with PHBEE 🐝")
+    st.title("Chat with PHBEE")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
-    # Display initial bot greeting
     if not st.session_state['chat_history']:
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
-    # Input field for user input
-    user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
+    # Create an input field with key "input"
+    input_placeholder = st.empty()  # Create an empty placeholder for the input field
+    user_input = input_placeholder.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
 
-    # Handle message sending
-    if st.button("Send") or user_input:
+    if st.button("Send"):
         if user_input:
             with st.spinner('Processing...'):
-                response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
-
-            # Display user and bot messages
+                response = detect_intent_text(client, project_id, agent_id,
+                                              st.session_state['session_id'], user_input, "en")
+            
+            # Display messages
             display_message("user", user_input)
             display_message("PHBEE", response)
 
-            # Save messages to chat history
+            # Append to chat history
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            # Clear input field using the callback
-            clear_input()
+            # Clear input field
+            input_placeholder.empty()
 
-    # Clear chat history
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
+        input_placeholder.empty()  # Clear the input field
 
     # Display chat history
     for chat in st.session_state['chat_history']:
-        if 'sender' in chat and 'message' in chat:
+        if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
             display_message(chat['sender'], chat['message'])
+        else:
+            st.error("Chat history contains invalid data.")
+
 
 
 
