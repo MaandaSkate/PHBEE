@@ -127,15 +127,20 @@ def create_memo(response_text):
     return memo
 
 # Chatbot logic
-def chatbot():
+def init_session_state():
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
-
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = generate_session_id()
-
     if 'input' not in st.session_state:
         st.session_state['input'] = ""
+
+def reset_input():
+    if 'input' in st.session_state:
+        st.session_state['input'] = ""
+
+def chatbot():
+    init_session_state()  # Initialize session state
 
     st.title("Chat with PHBEE 🐝")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
@@ -161,7 +166,7 @@ def chatbot():
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            st.session_state['input'] = ""
+            reset_input()  # Reset input safely
 
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
@@ -171,6 +176,7 @@ def chatbot():
             display_message(chat['sender'], chat['message'])
         else:
             st.error("Chat history contains invalid data.")
+
 
 
 
