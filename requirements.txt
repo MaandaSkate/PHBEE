@@ -8,4 +8,6 @@ google-auth
 google-cloud-dialogflow-cx
 gspread
 oauth2client
+streamlit-option-menu
+
 
