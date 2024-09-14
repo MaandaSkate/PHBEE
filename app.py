@@ -132,6 +132,7 @@ def create_memo(response_text):
 
 # Chatbot logic
 def chatbot():
+    # Initialize chat history and session ID
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
 
@@ -144,27 +145,33 @@ def chatbot():
     if not st.session_state['chat_history']:
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
-    # Input field with 'Enter' to send the message
-    user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...", on_change=lambda: send_message(user_input=st.session_state['input']))
-
-    # Automatically clear the input field after sending the message
-    def send_message(user_input):
+    # Function to process the message
+    def send_message():
+        user_input = st.session_state['input']  # Access the input value
         if user_input:
             with st.spinner('Processing...'):
                 response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
             
-            # Append to chat history
+            # Append user and bot messages to chat history
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            # Clear input field after message is sent
+            # Clear input field after sending the message
             st.session_state['input'] = ""
 
-    # Display chat history in a WhatsApp-like style
+    # Input field with Enter to send and a Send button
+    user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...", on_change=send_message)
+
+    # Send button to manually trigger sending the message
+    if st.button("Send"):
+        send_message()
+
+    # Display chat history in WhatsApp-like style
     for chat in st.session_state['chat_history']:
         if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
             display_message(chat['sender'], chat['message'])
 
+    # Clear chat history button
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
 
@@ -186,6 +193,7 @@ def display_message(sender, message):
             </div>
         </div>
         ''', unsafe_allow_html=True)
+
 
 
 
