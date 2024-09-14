@@ -29,15 +29,6 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 credentials_info = st.secrets["google_service_account_key"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
-def initialize_session_state():
-    """Initialize session state variables if they do not exist."""
-    if 'chat_history' not in st.session_state:
-        st.session_state['chat_history'] = []
-    if 'session_id' not in st.session_state:
-        st.session_state['session_id'] = f"session_{datetime.datetime.now().timestamp()}"
-    if 'input' not in st.session_state:
-        st.session_state['input'] = ""
-
 # Function to initialize Dialogflow client
 def initialize_dialogflow_client(credentials):
     client = dialogflow_cx.SessionsClient(credentials=credentials)
@@ -143,6 +134,7 @@ def generate_session_id():
     return str(uuid.uuid4())
 
 
+
 def chatbot():
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
@@ -152,29 +144,32 @@ def chatbot():
     st.title("Chat with PHBEE")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
-    # Create an input field with key "input" and a session state to store the value
-    user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
+    # Container for the chat input and send button
+    with st.container():
+        user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
+        col1, col2 = st.columns([4, 1])
+        with col2:
+            if st.button("Send"):
+                if user_input:
+                    with st.spinner('Processing...'):
+                        response = detect_intent_text(client, project_id, agent_id,
+                                                      st.session_state['session_id'], user_input, "en")
+                    
+                    # Display messages
+                    display_message("user", user_input)
+                    display_message("PHBEE", response)
 
-    if st.button("Send"):
-        if user_input:
-            with st.spinner('Processing...'):
-                response = detect_intent_text(client, project_id, agent_id,
-                                              st.session_state['session_id'], user_input, "en")
+                    # Append to chat history
+                    st.session_state['chat_history'].append({"sender": "user", "message": user_input})
+                    st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            # Display messages
-            display_message("user", user_input)
-            display_message("PHBEE", response)
+                    # Clear the input field
+                    st.session_state['input'] = ""  # Clear the input field
 
-            # Append to chat history
-            st.session_state['chat_history'].append({"sender": "user", "message": user_input})
-            st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
-
-            # Clear input field by updating the session state
+        # Clear Chat button
+        if st.button("Clear Chat"):
+            st.session_state['chat_history'] = []
             st.session_state['input'] = ""  # Clear the input field
-
-    if st.button("Clear Chat"):
-        st.session_state['chat_history'] = []
-        st.session_state['input'] = ""  # Clear the input field
 
     # Display chat history
     for chat in st.session_state['chat_history']:
@@ -182,11 +177,6 @@ def chatbot():
             display_message(chat['sender'], chat['message'])
         else:
             st.error("Chat history contains invalid data.")
-
-
-
-
-
 
 
 
