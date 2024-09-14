@@ -30,6 +30,14 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 credentials_info = st.secrets["google_service_account_key"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
+def initialize_session_state():
+    """Initialize session state variables if they do not exist."""
+    if 'chat_history' not in st.session_state:
+        st.session_state['chat_history'] = []
+    if 'session_id' not in st.session_state:
+        st.session_state['session_id'] = f"session_{datetime.datetime.now().timestamp()}"
+    if 'input' not in st.session_state:
+        st.session_state['input'] = ""
 
 # Function to initialize Dialogflow client
 def initialize_dialogflow_client(credentials):
@@ -132,40 +140,24 @@ def create_memo(response_text):
 
 # Chatbot logic
 
-# Helper function to initialize session state
-def initialize_session_state():
-    if 'chat_history' not in st.session_state:
-        st.session_state['chat_history'] = []
-    if 'session_id' not in st.session_state:
-        st.session_state['session_id'] = generate_session_id()
-    if 'user_input' not in st.session_state:  # Changed to 'user_input' to avoid conflicts
-        st.session_state['user_input'] = ""
-
-# Your existing generate_session_id function
-def generate_session_id():
-    return f"session_{datetime.datetime.now().timestamp()}"
 
 def chatbot():
-    # Initialize session state
+    # Initialize session state variables
     initialize_session_state()
 
+    # Display chatbot title and greeting
     st.title("Chat with PHBEE 🐝")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
-    # Initial bot greeting if no history exists
+    # Display initial bot greeting
     if not st.session_state['chat_history']:
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
     # Input field for user input
-    user_input = st.text_input(
-        "Type your message here:", 
-        value=st.session_state['user_input'],  # Use the session state input value
-        key="user_input",  # Changed the key to avoid conflicts
-        placeholder="Ask me anything..."
-    )
+    user_input = st.text_input("Type your message here:", value=st.session_state['input'], key="input", placeholder="Ask me anything...")
 
-    # Send button to manually trigger sending the message
-    if st.button("Send") or user_input:  # User can either press 'Send' or hit 'Enter'
+    # Handle message sending
+    if st.button("Send") or user_input:
         if user_input:
             with st.spinner('Processing...'):
                 response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
@@ -174,23 +166,22 @@ def chatbot():
             display_message("user", user_input)
             display_message("PHBEE", response)
 
-            # Append both messages to the chat history
+            # Save messages to chat history
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            # Clear input field after sending the message by resetting session state 'user_input'
-            st.session_state['user_input'] = ""
+            # Clear input field
+            st.session_state['input'] = ""
 
-    # Clear chat history button
+    # Clear chat history
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
 
     # Display chat history
     for chat in st.session_state['chat_history']:
-        if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
+        if 'sender' in chat and 'message' in chat:
             display_message(chat['sender'], chat['message'])
-        else:
-            st.error("Chat history contains invalid data.")
+
 
 
 
