@@ -136,7 +136,7 @@ def generate_session_id():
 
 
 
-def chatbot():
+ef chatbot():
     """Main function to handle the chatbot interaction."""
     # Initialize chat history and session ID
     if 'chat_history' not in st.session_state:
@@ -145,11 +145,6 @@ def chatbot():
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = generate_session_id()
 
-    # Initialize input field in session state
-    if 'input' not in st.session_state:
-        st.session_state['input'] = ""
-
-    # Set up the Streamlit app UI
     st.title("Chat with PHBEE 🐝")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
@@ -157,30 +152,27 @@ def chatbot():
     if not st.session_state['chat_history']:
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
-    # Input field for user input with Enter key support
+    # Input field for user input
     user_input = st.text_input(
         "Type your message here:", 
-        value=st.session_state['input'],  # Use the session state input value
-        key="input", 
         placeholder="Ask me anything..."
     )
 
     # Send button to manually trigger sending the message
-    if st.button("Send") or user_input:  # User can either press 'Send' or hit 'Enter'
-        if user_input:
-            with st.spinner('Processing...'):
-                response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
+    if st.button("Send") and user_input:  # User can either press 'Send' or hit 'Enter'
+        with st.spinner('Processing...'):
+            response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
 
-            # Display user and bot messages
-            display_message("user", user_input)
-            display_message("PHBEE", response)
+        # Display user and bot messages
+        display_message("user", user_input)
+        display_message("PHBEE", response)
 
-            # Append both messages to the chat history
-            st.session_state['chat_history'].append({"sender": "user", "message": user_input})
-            st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
+        # Append both messages to the chat history
+        st.session_state['chat_history'].append({"sender": "user", "message": user_input})
+        st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            # Clear input field after sending the message by resetting session state input
-            st.session_state['input'] = ""
+        # Clear input field after sending the message
+        user_input = ""
 
     # Clear chat history button
     if st.button("Clear Chat"):
