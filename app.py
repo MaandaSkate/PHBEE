@@ -1,4 +1,4 @@
-import os
+import os  # Import os module
 import streamlit as st
 from streamlit_option_menu import option_menu
 import datetime
@@ -24,7 +24,6 @@ header {visibility: hidden;}
 </style>
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
-
 
 # Load credentials from Streamlit secrets
 credentials_info = st.secrets["google_service_account_key"]
@@ -52,7 +51,6 @@ def initialize_firestore_client(credentials, project_id):
 # Define the Dialogflow parameters
 project_id = "phoeb-426309"
 agent_id = "016dc67d-53e9-49c5-acbf-dcb3069154f9"
-session_id = "123456789"
 language_code = "en"
 
 # Initialize clients
@@ -76,7 +74,6 @@ def img_to_base64(image_path):
 
 def generate_session_id():
     return f"session_{datetime.datetime.now().timestamp()}"
-
 
 def create_pdf(task_description, response_text, file_name, task_type):
     pdf = FPDF()
@@ -139,8 +136,6 @@ def create_memo(response_text):
     return memo
 
 # Chatbot logic
-
-
 def chatbot():
     # Initialize session state variables
     initialize_session_state()
@@ -182,17 +177,6 @@ def chatbot():
         if 'sender' in chat and 'message' in chat:
             display_message(chat['sender'], chat['message'])
 
-
-
-
-
-
-
-
-
-
-
-
 # Function to generate a task description
 def generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week):
     if task_type == "lesson plan":
@@ -206,8 +190,8 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
             f"{curriculum} curriculum. The task should include {num_questions_or_term} questions, each with 4 options, "
             f"and the total marks should sum up to {total_marks_or_week}."
         )
-# Task Generator logic
 
+# Task Generator logic
 def task_generator():
     st.subheader("Generate Educational Tasks")
     
@@ -236,7 +220,6 @@ def task_generator():
     # Generate task button
     if st.button("Generate Task"):
         try:
-            # Show a spinner while the task is being generated
             with st.spinner('Generating task, please wait...'):
                 # Generate task description and detect intent
                 task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
@@ -266,10 +249,6 @@ def task_generator():
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
-
-
-
-
 # Free Task logic
 def free_task():
     st.subheader("Free Task")
@@ -287,6 +266,7 @@ def free_task():
                 st.markdown(f"**Generated PDF:** {request_text}")
                 st.markdown(f"**Response:** {response_text}")
 
+                # Provide a download link for the PDF
                 st.markdown(f"""
                     <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
                     <div style="background-color: #FFCC00; color: white; padding: 10px; border-radius: 5px; text-align: center; max-width: 200px;">
@@ -368,10 +348,7 @@ def all_classwork():
             else:
                 st.error("Please provide all required inputs.")
 
-
-	    
-
-
+# Send Email Function
 def send_email(to_email, subject, body):
     try:
         from_email = st.secrets["email"]["email"]
@@ -398,23 +375,15 @@ def send_email(to_email, subject, body):
     except Exception as e:
         st.error(f"An error occurred: {e}")
 
-
-
 # Function to submit feedback
 def submit_feedback(rating, best_feature, feedback, contact_info):
-    # Prepare email content
     email_body = f"Rating: {rating}\nBest Feature: {best_feature}\nFeedback: {feedback}\nContact Info: {contact_info}"
-    
-    # Send feedback via email
     send_email("maandaskate60@gmail.com", "PHBEE Feedback Submission", email_body)
-    
     st.success("Thank you for your feedback! We've emailed it to our support team.")
 
 # Feedback form
 def feedback_form():
     st.subheader("Rate PHBEE the Educational Bot")
-    
-    # 5-star rating input
     rating = st.slider("How would you rate PHBEE?", 1, 5, value=5)
     
     # Best feature ranking input
@@ -431,18 +400,16 @@ def feedback_form():
     if st.button("Submit Feedback"):
         submit_feedback(rating, best_feature, feedback, contact_info)
 
-
-
-
+# Main function to handle page navigation
 def main():
     # Sidebar menu with icons
     with st.sidebar:
         selected = option_menu(
-            menu_title="PHBEE Educational AI",  # Title of the sidebar
-            options=["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task", "Feedback"],  # Page options
-            icons=["house", "robot", "file-text", "clipboard-data", "pencil-square", "chat-right-dots"],  # Icons for each option
-            menu_icon="cast",  # Main icon for the sidebar
-            default_index=0,  # Default selection
+            menu_title="PHBEE Educational AI",
+            options=["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task", "Feedback"],
+            icons=["house", "robot", "file-text", "clipboard-data", "pencil-square", "chat-right-dots"],
+            menu_icon="cast",
+            default_index=0,
         )
 
     # Page content logic based on selection
@@ -476,8 +443,10 @@ def main():
     elif selected == "Feedback":
         feedback_form()
 
+# Run the app
 if __name__ == "__main__":
     main()
+
 
 
 
