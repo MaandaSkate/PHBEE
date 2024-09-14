@@ -1,5 +1,6 @@
 import os
 import streamlit as st
+from streamlit_option_menu import option_menu
 import datetime
 import random
 from fpdf import FPDF
@@ -414,13 +415,21 @@ def feedback_form():
         submit_feedback(rating, best_feature, feedback, contact_info)
 
 
-def main():
-    st.sidebar.title("PHBEE Educational AI")
-    st.sidebar.image("image/PHBEE LOGO FINAL.png", use_column_width=True)
 
-    page = st.sidebar.radio("Navigation", ["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task", "Feedback"])
-    
-    if page == "Home":
+
+def main():
+    # Sidebar menu with icons
+    with st.sidebar:
+        selected = option_menu(
+            menu_title="PHBEE Educational AI",  # Title of the sidebar
+            options=["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task", "Feedback"],  # Page options
+            icons=["house", "robot", "file-text", "clipboard-data", "pencil-square", "chat-right-dots"],  # Icons for each option
+            menu_icon="cast",  # Main icon for the sidebar
+            default_index=0,  # Default selection
+        )
+
+    # Page content logic based on selection
+    if selected == "Home":
         st.title('Welcome to PHBEE :rocket:')
         st.header("Your AI Powered Educational Chatbot 🏠")
         st.markdown('''
@@ -435,23 +444,24 @@ def main():
         st.video("https://www.youtube.com/watch?v=HlaGFOQ-aLk")
         st.image("image/PHBEE LOGO FINAL.png", use_column_width=True)
 
-    elif page == "Chatbot":
+    elif selected == "Chatbot":
         chatbot()
 
-    elif page == "Task Generator":
+    elif selected == "Task Generator":
         task_generator()
 
-    elif page == "All Classwork":
+    elif selected == "All Classwork":
         all_classwork()
 
-    elif page == "Free Task":
+    elif selected == "Free Task":
         free_task()
 
-    elif page == "Feedback":
+    elif selected == "Feedback":
         feedback_form()
 
 if __name__ == "__main__":
     main()
+
 
 
 
