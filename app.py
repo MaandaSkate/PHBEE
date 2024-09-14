@@ -136,6 +136,13 @@ def create_memo(response_text):
     return memo
 
 # Chatbot logic
+
+def generate_session_id():
+    # Function to generate a unique session ID
+    import uuid
+    return str(uuid.uuid4())
+
+
 def chatbot():
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
@@ -145,7 +152,7 @@ def chatbot():
     st.title("Chat with PHBEE")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
-    # Create an input field with key "input"
+    # Create an input field with key "input" and a session state to store the value
     user_input = st.text_input("Type your message here:", key="input", placeholder="Ask me anything...")
 
     if st.button("Send"):
@@ -153,7 +160,7 @@ def chatbot():
             with st.spinner('Processing...'):
                 response = detect_intent_text(client, project_id, agent_id,
                                               st.session_state['session_id'], user_input, "en")
-            
+
             # Display messages
             display_message("user", user_input)
             display_message("PHBEE", response)
@@ -162,7 +169,7 @@ def chatbot():
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            # Clear input field
+            # Clear input field by updating the session state
             st.session_state['input'] = ""  # Clear the input field
 
     if st.button("Clear Chat"):
@@ -175,6 +182,9 @@ def chatbot():
             display_message(chat['sender'], chat['message'])
         else:
             st.error("Chat history contains invalid data.")
+
+
+
 
 
 
