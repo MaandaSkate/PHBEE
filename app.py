@@ -95,12 +95,16 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.output(file_name)
 
 def detect_intent_text(client, project_id, agent_id, session_id, text, language_code="en"):
-    session_path = f"projects/{project_id}/locations/global/agents/{agent_id}/sessions/{session_id}"
-    text_input = dialogflow_cx.TextInput(text=text)
-    query_input = dialogflow_cx.QueryInput(text=text_input, language_code=language_code)
-    request = dialogflow_cx.DetectIntentRequest(session=session_path, query_input=query_input)
-    response = client.detect_intent(request=request)
-    return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
+    try:
+        session_path = f"projects/{project_id}/locations/global/agents/{agent_id}/sessions/{session_id}"
+        text_input = dialogflow_cx.TextInput(text=text)
+        query_input = dialogflow_cx.QueryInput(text=text_input, language_code=language_code)
+        request = dialogflow_cx.DetectIntentRequest(session=session_path, query_input=query_input)
+        response = client.detect_intent(request=request)
+        return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
+    except Exception as e:
+        st.error(f"Error detecting intent: {e}")
+        return "An error occurred while processing your request."
 
 def display_message(sender, message):
     if sender == "user":
@@ -136,64 +140,50 @@ def create_memo(response_text):
 
 # Main chatbot function
 def chatbot():
-    # Initialize chat history and session ID
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
 
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = generate_session_id()
 
-    # Initialize input field in session state
     if 'input' not in st.session_state:
         st.session_state['input'] = ""
 
     st.title("Chat with PHBEE 🐝")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
-    # Initial bot greeting if no history exists
     if not st.session_state['chat_history']:
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
-    # Create input field
     user_input = st.text_input(
-        "Type your message here:", 
-        value=st.session_state['input'],  # Use the session state input value
-        key="input", 
+        "Type your message here:",
+        value=st.session_state['input'],
+        key="input",
         placeholder="Ask me anything..."
     )
 
-    # Send button to manually trigger sending the message
     if st.button("Send"):
         if user_input:
             with st.spinner('Processing...'):
-                # Replace with your Dialogflow client initialization
-                client = dialogflow_cx.AgentsClient()  # Example initialization
-                project_id = 'your_project_id'  # Replace with your project ID
-                agent_id = 'your_agent_id'  # Replace with your agent ID
-                
                 response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
 
-            # Display user and bot messages
             display_message("user", user_input)
             display_message("PHBEE", response)
 
-            # Append both messages to the chat history
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            # Clear input field after sending the message
             st.session_state['input'] = ""
 
-    # Clear chat history button
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
 
-    # Display chat history
     for chat in st.session_state['chat_history']:
         if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
             display_message(chat['sender'], chat['message'])
         else:
             st.error("Chat history contains invalid data.")
+
 
 
 
