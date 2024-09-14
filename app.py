@@ -11,7 +11,7 @@ import base64
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-
+import uuid
 # Set the page configuration
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
 
@@ -129,9 +129,15 @@ def create_memo(response_text):
 # Chatbot logic
 
 
-import uuid
+
+def generate_session_id():
+    """Generate a unique session ID."""
+    return str(uuid.uuid4())
+
+
 
 def chatbot():
+    """Main function to handle the chatbot interaction."""
     # Initialize chat history and session ID
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
@@ -143,6 +149,7 @@ def chatbot():
     if 'input' not in st.session_state:
         st.session_state['input'] = ""
 
+    # Set up the Streamlit app UI
     st.title("Chat with PHBEE 🐝")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
@@ -186,15 +193,6 @@ def chatbot():
         else:
             st.error("Chat history contains invalid data.")
 
-def display_message(sender, message):
-    if sender == "user":
-        st.markdown(f"**You:** {message}")
-    elif sender == "PHBEE":
-        st.markdown(f"**PHBEE:** {message}")
-
-def generate_session_id():
-    import uuid
-    return str(uuid.uuid4())
 
 
 
