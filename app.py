@@ -130,6 +130,7 @@ def create_memo(response_text):
 
 # Chatbot logic
 
+# Main chatbot function
 def chatbot():
     # Initialize chat history and session ID
     if 'chat_history' not in st.session_state:
@@ -149,7 +150,7 @@ def chatbot():
     if not st.session_state['chat_history']:
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
-    # Input field for user input with Enter key support
+    # Create input field
     user_input = st.text_input(
         "Type your message here:", 
         value=st.session_state['input'],  # Use the session state input value
@@ -158,9 +159,14 @@ def chatbot():
     )
 
     # Send button to manually trigger sending the message
-    if st.button("Send") or user_input:  # User can either press 'Send' or hit 'Enter'
+    if st.button("Send"):
         if user_input:
             with st.spinner('Processing...'):
+                # Replace with your Dialogflow client initialization
+                client = dialogflow_cx.AgentsClient()  # Example initialization
+                project_id = 'your_project_id'  # Replace with your project ID
+                agent_id = 'your_agent_id'  # Replace with your agent ID
+                
                 response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
 
             # Display user and bot messages
@@ -171,7 +177,7 @@ def chatbot():
             st.session_state['chat_history'].append({"sender": "user", "message": user_input})
             st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-            # Clear input field after sending the message by resetting session state input
+            # Clear input field after sending the message
             st.session_state['input'] = ""
 
     # Clear chat history button
@@ -184,6 +190,11 @@ def chatbot():
             display_message(chat['sender'], chat['message'])
         else:
             st.error("Chat history contains invalid data.")
+
+def generate_session_id():
+    # Function to generate a unique session ID
+    import uuid
+    return str(uuid.uuid4())
 
 
 
