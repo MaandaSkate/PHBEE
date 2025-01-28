@@ -66,21 +66,21 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"{task_type.capitalize()} / Assessment", ln=True, align='C')
+
+    # Header
+    pdf.cell(200, 10, txt=f"{task_type.capitalize()} / Task", ln=True, align='C')
     pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
     pdf.ln(10)
 
-    pdf.set_fill_color(200, 220, 255)
-    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
-
+    # Task description and response
     pdf.set_xy(10, 40)
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
 
-    if task_type != "lesson plan":
-        memo = create_memo(response_text)
-        pdf.ln(10)
-        pdf.set_xy(10, pdf.get_y())
-        pdf.multi_cell(0, 10, txt=f"{memo}")
+    # Generate memo
+    memo = create_memo(response_text)
+    pdf.ln(10)
+    pdf.set_xy(10, pdf.get_y())
+    pdf.multi_cell(0, 10, txt=f"{memo}")
 
     pdf.output(file_name)
 
