@@ -272,20 +272,22 @@ def task_generator():
                 file_name=file_name,
                 mime='application/pdf'
             )
+	
+		# Generate the Memo PDF
+		memo_file_name = f"Memo_{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+		create_memo_pdf(response_text, memo_file_name)
+		
+		# Provide a download button for the Memo PDF
+		st.download_button(
+		label="Download Memo PDF",
+		data=open(memo_file_name, "rb").read(),
+		file_name=memo_file_name,
+		mime='application/pdf'
+		)
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
-# Generate the Memo PDF
-memo_file_name = f"Memo_{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-create_memo_pdf(response_text, memo_file_name)
 
-# Provide a download button for the Memo PDF
-st.download_button(
-label="Download Memo PDF",
-data=open(memo_file_name, "rb").read(),
-file_name=memo_file_name,
-mime='application/pdf'
-)
 
 
 # Free Task logic
