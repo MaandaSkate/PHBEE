@@ -118,13 +118,23 @@ def display_message(sender, message):
             </div>
             ''', unsafe_allow_html=True)
 
-def create_memo(response_text):
-    memo = "\nMemo:\n"
-    questions = response_text.split("\n")
-    for question in questions:
-        if "Answer:" in question:
-            memo += question + "\n"
-    return memo
+def create_memo_pdf(response_text, memo_file_name):
+    """Generate a separate PDF for the memo."""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Memo", ln=True, align='C')
+    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
+    pdf.ln(10)
+
+    pdf.set_fill_color(200, 220, 255)
+    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
+
+    pdf.set_xy(10, 40)
+    pdf.multi_cell(0, 10, txt="Memo:\n" + response_text)
+
+    pdf.output(memo_file_name)
+
 
 # Chatbot logic
 
@@ -264,6 +274,19 @@ def task_generator():
             )
         except Exception as e:
             st.error(f"An error occurred: {e}")
+
+	# Generate the Memo PDF
+	memo_file_name = f"Memo_{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+	create_memo_pdf(response_text, memo_file_name)
+	
+	# Provide a download button for the Memo PDF
+	st.download_button(
+	label="Download Memo PDF",
+	data=open(memo_file_name, "rb").read(),
+	file_name=memo_file_name,
+	mime='application/pdf'
+	)
+
 
 # Free Task logic
 def free_task():
