@@ -217,7 +217,7 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
             f"and the total marks should sum up to {total_marks_or_week}."
         )
 
-# Task Generator logic
+# Updated Function to Include Memo Logic
 def task_generator():
     st.subheader("Generate Educational Tasks")
     
@@ -247,7 +247,6 @@ def task_generator():
     if st.button("Generate Task"):
         try:
             with st.spinner('Generating task, please wait...'):
-                # Generate task description and detect intent
                 task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
                 response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
@@ -261,31 +260,29 @@ def task_generator():
                 file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 create_pdf(task_description, response_text, file_name, task_type)
 
-            # Show success message and balloons when task is ready
-            st.success(f"Task generated and saved as {file_name}.")
-            st.balloons()
+                # Create the Memo PDF
+                memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_memo_pdf(response_text, memo_file_name, task_type)
 
-            # Provide a download button for the generated PDF
-            st.download_button(
-                label="Download PDF",
-                data=open(file_name, "rb").read(),
-                file_name=file_name,
-                mime='application/pdf'
-            )
-	
-		# Generate the Memo PDF
-		memo_file_name = f"Memo_{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-		create_memo_pdf(response_text, memo_file_name)
-		
-		# Provide a download button for the Memo PDF
-		st.download_button(
-		label="Download Memo PDF",
-		data=open(memo_file_name, "rb").read(),
-		file_name=memo_file_name,
-		mime='application/pdf'
-		)
+                st.success(f"Task and memo generated successfully!")
+                st.balloons()
+
+                # Provide a download button for the generated PDFs
+                st.download_button(
+                    label="Download Task PDF",
+                    data=open(file_name, "rb").read(),
+                    file_name=file_name,
+                    mime='application/pdf'
+                )
+                st.download_button(
+                    label="Download Memo PDF",
+                    data=open(memo_file_name, "rb").read(),
+                    file_name=memo_file_name,
+                    mime='application/pdf'
+                )
         except Exception as e:
             st.error(f"An error occurred: {e}")
+ 
 
 
 
