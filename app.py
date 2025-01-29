@@ -78,6 +78,23 @@ def create_memo(response_text):
     return memo
 
 # 2. PDF Creation Function (uses create_memo)
+def create_pdf(task_description, response_text, file_name, task_type):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"{task_type.capitalize()} / Assessment", ln=True, align='C')
+    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
+    pdf.ln(10)
+
+    pdf.set_fill_color(200, 220, 255)
+    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
+
+    pdf.set_xy(10, 40)
+    pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
+
+    pdf.output(file_name)
+
+# 3. Memo PDF Creation Function (calls create_memo)
 def create_memo_pdf(response_text, memo_file_name, task_type):
     """Generate a memo PDF based on the response text."""
     pdf = FPDF()
@@ -92,24 +109,6 @@ def create_memo_pdf(response_text, memo_file_name, task_type):
 
     pdf.set_xy(10, 40)
     memo_text = create_memo(response_text)  # Extract answers properly
-    pdf.multi_cell(0, 10, txt=memo_text)
-
-    pdf.output(memo_file_name)
-
-# 3. Memo PDF Creation Function (calls create_memo)
-def create_memo_pdf(response_text, memo_file_name, task_type):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"{task_type.capitalize()} Memo", ln=True, align='C')
-    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
-    pdf.ln(10)
-
-    pdf.set_fill_color(200, 220, 255)
-    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
-
-    pdf.set_xy(10, 40)
-    memo_text = create_memo(response_text)  # Ensure function is used correctly
     pdf.multi_cell(0, 10, txt=memo_text)
 
     pdf.output(memo_file_name)
