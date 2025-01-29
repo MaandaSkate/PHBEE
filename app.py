@@ -61,22 +61,29 @@ def img_to_base64(image_path):
     except Exception as e:
         st.error(f"An unexpected error occurred: {str(e)}")
         return base64.b64encode(b'').decode('utf-8')
+
 # 1. Memo Creation Function (must be defined first)
 def create_memo(response_text):
-    """Generate a memo text based on the response text."""
-    memo = "Memo:\n"
+    """Generate a memo text with answers from the response."""
+    memo = "Memo:\n\n"
     questions = response_text.split("\n")
+    
     for question in questions:
-        if "Answer:" in question:
+        if "Answer:" in question:  # Extract lines containing answers
             memo += question + "\n"
+
+    if memo.strip() == "Memo:":  # If no answers are found, add a note
+        memo += "No answers provided in response.\n"
+
     return memo
 
 # 2. PDF Creation Function (uses create_memo)
-def create_pdf(task_description, response_text, file_name, task_type):
+def create_memo_pdf(response_text, memo_file_name, task_type):
+    """Generate a memo PDF based on the response text."""
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"{task_type.capitalize()} / Assessment", ln=True, align='C')
+    pdf.cell(200, 10, txt=f"{task_type.capitalize()} Memo", ln=True, align='C')
     pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
     pdf.ln(10)
 
@@ -84,9 +91,10 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
     pdf.set_xy(10, 40)
-    pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
+    memo_text = create_memo(response_text)  # Extract answers properly
+    pdf.multi_cell(0, 10, txt=memo_text)
 
-    pdf.output(file_name)
+    pdf.output(memo_file_name)
 
 # 3. Memo PDF Creation Function (calls create_memo)
 def create_memo_pdf(response_text, memo_file_name, task_type):
@@ -229,6 +237,7 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
             f"and the total marks should sum up to {total_marks_or_week}."
         )
 
+
 def task_generator():
     st.subheader("Generate Educational Tasks")
 
@@ -267,7 +276,7 @@ def task_generator():
                 st.write(f"**Task Description:** {task_description}")
                 st.write(f"**Response from Intent Detection:** {response_text}")
 
-                # Create the Task PDF file
+                # Create the Task PDF
                 file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 create_pdf(task_description, response_text, file_name, task_type)
 
@@ -278,16 +287,23 @@ def task_generator():
                 st.success(f"Task and memo generated successfully!")
                 st.balloons()
 
-                # Provide download buttons for the generated PDFs
+                # Store the PDF data before using download buttons
+                with open(file_name, "rb") as task_pdf:
+                    task_pdf_data = task_pdf.read()
+
+                with open(memo_file_name, "rb") as memo_pdf:
+                    memo_pdf_data = memo_pdf.read()
+
+                # Provide download buttons for both PDFs
                 st.download_button(
                     label="Download Task PDF",
-                    data=open(file_name, "rb").read(),
+                    data=task_pdf_data,
                     file_name=file_name,
                     mime='application/pdf'
                 )
                 st.download_button(
                     label="Download Memo PDF",
-                    data=open(memo_file_name, "rb").read(),
+                    data=memo_pdf_data,
                     file_name=memo_file_name,
                     mime='application/pdf'
                 )
