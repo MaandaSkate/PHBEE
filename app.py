@@ -61,7 +61,17 @@ def img_to_base64(image_path):
     except Exception as e:
         st.error(f"An unexpected error occurred: {str(e)}")
         return base64.b64encode(b'').decode('utf-8')
+# 1. Memo Creation Function (must be defined first)
+def create_memo(response_text):
+    """Generate a memo text based on the response text."""
+    memo = "Memo:\n"
+    questions = response_text.split("\n")
+    for question in questions:
+        if "Answer:" in question:
+            memo += question + "\n"
+    return memo
 
+# 2. PDF Creation Function (uses create_memo)
 def create_pdf(task_description, response_text, file_name, task_type):
     pdf = FPDF()
     pdf.add_page()
@@ -76,16 +86,10 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.set_xy(10, 40)
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
 
-    # Add the memo section
-    memo = create_memo(response_text)  # Ensure create_memo is defined
-    pdf.ln(10)
-    pdf.set_xy(10, pdf.get_y())
-    pdf.multi_cell(0, 10, txt=memo)
-
     pdf.output(file_name)
 
+# 3. Memo PDF Creation Function (calls create_memo)
 def create_memo_pdf(response_text, memo_file_name, task_type):
-    """Generate a memo PDF based on the response text."""
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -97,9 +101,13 @@ def create_memo_pdf(response_text, memo_file_name, task_type):
     pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
     pdf.set_xy(10, 40)
-    pdf.multi_cell(0, 10, txt=f"Memo:\n{response_text}")
+    memo_text = create_memo(response_text)  # Ensure function is used correctly
+    pdf.multi_cell(0, 10, txt=memo_text)
 
     pdf.output(memo_file_name)
+
+
+
 
 
 
