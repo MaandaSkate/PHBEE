@@ -76,13 +76,23 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.set_xy(10, 40)
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
 
-    if task_type != "lesson plan":
-        memo = create_memo(response_text)
-        pdf.ln(10)
-        pdf.set_xy(10, pdf.get_y())
-        pdf.multi_cell(0, 10, txt=f"{memo}")
+    # Add the memo section
+    memo = create_memo(response_text)  # Ensure create_memo is defined
+    pdf.ln(10)
+    pdf.set_xy(10, pdf.get_y())
+    pdf.multi_cell(0, 10, txt=memo)
 
     pdf.output(file_name)
+
+def create_memo(response_text):
+    """Generate a memo text based on the response text."""
+    memo = "Memo:\n"
+    questions = response_text.split("\n")
+    for question in questions:
+        if "Answer:" in question:  # This assumes answers are marked with 'Answer:' in the response
+            memo += question + "\n"
+    return memo
+
 
 def detect_intent_text(client, project_id, agent_id, session_id, text, language_code="en"):
     try:
@@ -118,22 +128,7 @@ def display_message(sender, message):
             </div>
             ''', unsafe_allow_html=True)
 
-def create_memo_pdf(response_text, memo_file_name):
-    """Generate a separate PDF for the memo."""
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Memo", ln=True, align='C')
-    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
-    pdf.ln(10)
 
-    pdf.set_fill_color(200, 220, 255)
-    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
-
-    pdf.set_xy(10, 40)
-    pdf.multi_cell(0, 10, txt="Memo:\n" + response_text)
-
-    pdf.output(memo_file_name)
 
 
 # Chatbot logic
@@ -301,17 +296,25 @@ def free_task():
                 pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 create_pdf(request_text, response_text, pdf_file_name, "Free Task")
 
+                memo_file_name = f"Free_Task_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_memo_pdf(response_text, memo_file_name, "Free Task")
+
                 st.markdown(f"**Generated PDF:** {request_text}")
                 st.markdown(f"**Response:** {response_text}")
 
-                # Provide a download link for the PDF
-                st.markdown(f"""
-                    <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
-                    <div style="background-color: #FFCC00; color: white; padding: 10px; border-radius: 5px; text-align: center; max-width: 200px;">
-                        Download {pdf_file_name}
-                    </div>
-                    </a>
-                """, unsafe_allow_html=True)
+                # Provide download buttons
+                st.download_button(
+                    label="Download Task PDF",
+                    data=open(pdf_file_name, "rb").read(),
+                    file_name=pdf_file_name,
+                    mime='application/pdf'
+                )
+                st.download_button(
+                    label="Download Memo PDF",
+                    data=open(memo_file_name, "rb").read(),
+                    file_name=memo_file_name,
+                    mime='application/pdf'
+                )
         else:
             st.error("Please enter a valid request.")
 
