@@ -221,10 +221,9 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
             f"and the total marks should sum up to {total_marks_or_week}."
         )
 
-# Updated Function to Include Memo Logic
 def task_generator():
     st.subheader("Generate Educational Tasks")
-    
+
     # Ensure session_id is initialized
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = generate_session_id()
@@ -260,18 +259,18 @@ def task_generator():
                 st.write(f"**Task Description:** {task_description}")
                 st.write(f"**Response from Intent Detection:** {response_text}")
 
-                # Create the PDF file
+                # Create the Task PDF file
                 file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 create_pdf(task_description, response_text, file_name, task_type)
 
                 # Create the Memo PDF
-		memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-		create_memo_pdf(response_text, memo_file_name, task_type)
+                memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_memo_pdf(response_text, memo_file_name, task_type)
 
                 st.success(f"Task and memo generated successfully!")
                 st.balloons()
 
-                # Provide a download button for the generated PDFs
+                # Provide download buttons for the generated PDFs
                 st.download_button(
                     label="Download Task PDF",
                     data=open(file_name, "rb").read(),
@@ -284,9 +283,10 @@ def task_generator():
                     file_name=memo_file_name,
                     mime='application/pdf'
                 )
-		    
+
         except Exception as e:
             st.error(f"An error occurred: {e}")
+
  
 
 
