@@ -84,14 +84,23 @@ def create_pdf(task_description, response_text, file_name, task_type):
 
     pdf.output(file_name)
 
-def create_memo(response_text):
-    """Generate a memo text based on the response text."""
-    memo = "Memo:\n"
-    questions = response_text.split("\n")
-    for question in questions:
-        if "Answer:" in question:  # This assumes answers are marked with 'Answer:' in the response
-            memo += question + "\n"
-    return memo
+def create_memo_pdf(response_text, memo_file_name, task_type):
+    """Generate a memo PDF based on the response text."""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"{task_type.capitalize()} Memo", ln=True, align='C')
+    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
+    pdf.ln(10)
+
+    pdf.set_fill_color(200, 220, 255)
+    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
+
+    pdf.set_xy(10, 40)
+    pdf.multi_cell(0, 10, txt=f"Memo:\n{response_text}")
+
+    pdf.output(memo_file_name)
+
 
 
 def detect_intent_text(client, project_id, agent_id, session_id, text, language_code="en"):
@@ -256,8 +265,8 @@ def task_generator():
                 create_pdf(task_description, response_text, file_name, task_type)
 
                 # Create the Memo PDF
-                memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                create_memo_pdf(response_text, memo_file_name, task_type)
+		memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+		create_memo_pdf(response_text, memo_file_name, task_type)
 
                 st.success(f"Task and memo generated successfully!")
                 st.balloons()
@@ -275,6 +284,7 @@ def task_generator():
                     file_name=memo_file_name,
                     mime='application/pdf'
                 )
+		    
         except Exception as e:
             st.error(f"An error occurred: {e}")
  
