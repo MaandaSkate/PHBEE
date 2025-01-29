@@ -544,7 +544,7 @@ def main():
         ''')
         st.markdown("#### `Get Started Now!`, find the navigation arrow on the top left")
         st.video("https://www.youtube.com/watch?v=HlaGFOQ-aLk")
-        st.image("image/PHBEE LOGO FINAL.png", use_column_width=True)
+        st.image("image/PHBEE LOGO FINAL.png", use_container_width=True)
 
     elif selected == "Chatbot":
         chatbot()
