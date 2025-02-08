@@ -86,12 +86,12 @@ def extract_answer_key(response_text):
     return "\n".join(answer_key)
 
 
-def create_memo_pdf(answer_key, memo_file_name):
+def create_memo_pdf(answer_key, memo_file_name, task_type):
     """Generate a memo PDF containing the extracted answer key."""
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Memo", ln=True, align='C')
+    pdf.cell(200, 10, txt=f"{task_type.capitalize()} Memo", ln=True, align='C')
     pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
     pdf.ln(10)
 
@@ -102,6 +102,7 @@ def create_memo_pdf(answer_key, memo_file_name):
     pdf.multi_cell(0, 10, txt=f"**Answer Key:**\n{answer_key}" if answer_key.strip() else "No answers found.")
 
     pdf.output(memo_file_name)
+
 
 
 
@@ -319,7 +320,7 @@ def task_generator():
 
                 # Create the PDFs
                 create_pdf(task_description, response_text, file_name, task_type)
-                create_memo_pdf(answer_key, memo_file_name)
+                create_memo_pdf(answer_key, memo_file_name, task_type)
 
                 st.success("Task and Memo generated successfully!")
                 st.balloons()
