@@ -71,6 +71,7 @@ def extract_questions_answers(response_text):
     questions = []
     answers = []
     current_question = []
+    current_answer = []
     is_answer_section = False
 
     for line in lines:
@@ -84,17 +85,21 @@ def extract_questions_answers(response_text):
             continue  # Skip "Answer Key" title itself
 
         if is_answer_section:
-            answers.append(stripped_line)  # Store only answers
+            current_answer.append(stripped_line)  # Store only answers
         else:
             current_question.append(stripped_line)  # Store only questions
 
     if current_question:
         questions.append("\n".join(current_question).strip())
 
+    if current_answer:
+        answers.append("\n".join(current_answer).strip())
+
     formatted_questions = "\n\n".join(questions)
     formatted_answers = "\n\n".join(answers)
 
     return formatted_questions, formatted_answers
+
 
 
 
@@ -109,6 +114,7 @@ def create_memo(response_text):
         memo += "No answers provided.\n"
 
     return memo
+
 
 
 
@@ -132,6 +138,7 @@ def create_memo_pdf(response_text, memo_file_name, task_type):
 
 
 
+
 def create_pdf(task_description, response_text, file_name, task_type):
     """Generates the task PDF including all questions."""
     formatted_questions, _ = extract_questions_answers(response_text)  # ✅ Use correct function name
@@ -150,6 +157,7 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nQuestions:\n{formatted_questions}")
 
     pdf.output(file_name)
+
 
 
 
@@ -310,11 +318,8 @@ def task_generator():
                 task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
                 response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
-                # Show the response text to the user
-                st.subheader("Generated Task Description and Response")
-                st.write(f"**Task Type:** {task_type}")
-                st.write(f"**Task Description:** {task_description}")
-                st.write(f"**Response from Intent Detection:** {response_text}")
+                # Extract questions and answers
+                formatted_questions, formatted_answers = extract_questions_answers(response_text)
 
                 # Create PDFs
                 file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -323,21 +328,37 @@ def task_generator():
                 create_pdf(task_description, response_text, file_name, task_type)
                 create_memo_pdf(response_text, memo_file_name, task_type)
 
-                st.success(f"Task and memo generated successfully!")
+                st.success("Task and Memo generated successfully!")
                 st.balloons()
 
-                # Provide download buttons
+                # Store the PDF data before using download buttons
                 with open(file_name, "rb") as task_pdf:
                     task_pdf_data = task_pdf.read()
 
                 with open(memo_file_name, "rb") as memo_pdf:
                     memo_pdf_data = memo_pdf.read()
 
+                # Individual download buttons
                 st.download_button(label="Download Task PDF", data=task_pdf_data, file_name=file_name, mime='application/pdf')
                 st.download_button(label="Download Memo PDF", data=memo_pdf_data, file_name=memo_file_name, mime='application/pdf')
 
+                # Combined ZIP download
+                zip_filename = f"{task_type.replace(' ', '_')}_Task_and_Memo.zip"
+                import zipfile
+                import io
+
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+                    zip_file.writestr(file_name, task_pdf_data)
+                    zip_file.writestr(memo_file_name, memo_pdf_data)
+
+                zip_buffer.seek(0)
+
+                st.download_button(label="Download Both PDFs (Task + Memo)", data=zip_buffer, file_name=zip_filename, mime="application/zip")
+
         except Exception as e:
             st.error(f"An error occurred: {e}")
+
 
 
 
