@@ -62,67 +62,61 @@ def img_to_base64(image_path):
         st.error(f"An unexpected error occurred: {str(e)}")
         return base64.b64encode(b'').decode('utf-8')
 
-
-def extract_questions_answers_steps(response_text):
+def extract_questions_answers(response_text):
     """
-    Extracts full questions, answers, and steps to answers.
-    Returns: (formatted_questions, formatted_answers_with_steps)
+    Extracts full questions and their answers.
+    Returns: (formatted_questions, formatted_answers)
     """
     lines = response_text.split("\n")
     questions = []
-    answers_with_steps = []
+    answers = []
     current_question = []
     current_answer = []
     is_answer_section = False
-    is_steps_section = False
 
     for line in lines:
         stripped_line = line.strip()
 
-        if "Answer Key:" in stripped_line:
+        if "Answer Key:" in stripped_line:  # Detect where answers start
             is_answer_section = True
-            is_steps_section = False
             if current_question:
                 questions.append("\n".join(current_question).strip())
                 current_question = []
-            continue  # Skip "Answer Key" title
+            continue  # Skip the "Answer Key" title itself
 
-        if "Steps to Answer:" in stripped_line:
-            is_steps_section = True
-            continue  # Skip "Steps to Answer" title
-
-        if is_answer_section or is_steps_section:
-            current_answer.append(stripped_line)
+        if is_answer_section:
+            current_answer.append(stripped_line)  # Store only answers
         else:
-            current_question.append(stripped_line)
+            current_question.append(stripped_line)  # Store only questions
 
     if current_question:
         questions.append("\n".join(current_question).strip())
 
     if current_answer:
-        answers_with_steps.append("\n".join(current_answer).strip())
+        answers.append("\n".join(current_answer).strip())
 
     formatted_questions = "\n\n".join(questions)
-    formatted_answers_with_steps = "\n\n".join(answers_with_steps)
+    formatted_answers = "\n\n".join(answers)
 
-    return formatted_questions, formatted_answers_with_steps
+    return formatted_questions, formatted_answers
 
 
 def create_memo(response_text):
-    """Generate a memo text with answers and steps from the response."""
-    formatted_questions, answers_with_steps = extract_questions_answers_steps(response_text)
+    """Generate a memo text with answers from the response."""
+    _, formatted_answers = extract_questions_answers(response_text)
     memo = "Memo:\n\n"
 
-    if answers_with_steps.strip():
-        memo += f"Answer Key and Steps:\n\n{answers_with_steps}\n"
+    if formatted_answers.strip():
+        memo += f"Answer Key:\n\n{formatted_answers}\n"
     else:
-        memo += "No answers or steps provided.\n"
+        memo += "No answers provided.\n"
 
     return memo
 
 
+
 def create_memo_pdf(response_text, memo_file_name, task_type):
-    """Generate a memo PDF based on the response text."""
+    """Generate a memo PDF displaying only the answer key."""
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -134,10 +128,11 @@ def create_memo_pdf(response_text, memo_file_name, task_type):
     pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
     pdf.set_xy(10, 40)
-    memo_text = create_memo(response_text)  # Extract answers and steps
+    memo_text = create_memo(response_text)  # Extract and format answers only
     pdf.multi_cell(0, 10, txt=memo_text)
 
     pdf.output(memo_file_name)
+
 
 
 def create_pdf(task_description, response_text, file_name, task_type):
