@@ -62,42 +62,50 @@ def img_to_base64(image_path):
         st.error(f"An unexpected error occurred: {str(e)}")
         return base64.b64encode(b'').decode('utf-8')
 
-def extract_answer_key(response_text):
-    """Extracts the answer key from the response text and returns it separately."""
+def extract_questions_and_answers(response_text):
+    """
+    Extracts questions, answers, and steps to the answer.
+    Returns: (formatted_questions, formatted_answers_with_steps)
+    """
     lines = response_text.split("\n")
-    main_text = []
-    answer_key = []
+    questions = []
+    answers_with_steps = []
+    current_question = []
+    current_answer = []
+    is_answer_section = False
+    is_steps_section = False
 
-    is_answer_key = False
     for line in lines:
-        if "Answer Key" in line:  # Detect where the answer key starts
-            is_answer_key = True
-            continue
-        if is_answer_key:
-            answer_key.append(line.strip())  # Store answer key separately
+        stripped_line = line.strip()
+
+        if "Answer Key" in stripped_line:
+            is_answer_section = True
+            continue  # Skip the "Answer Key" title
+
+        if "Steps to Answer" in stripped_line:
+            is_steps_section = True
+            continue  # Skip the "Steps to Answer" title
+
+        if is_answer_section or is_steps_section:
+            current_answer.append(stripped_line)  # Collect answers and steps
         else:
-            main_text.append(line.strip())  # Store main task response
+            current_question.append(stripped_line)  # Collect questions
 
-    return "\n".join(main_text), "\n".join(answer_key)
+        if stripped_line == "":
+            if current_question:
+                questions.append("\n".join(current_question).strip())
+                current_question = []
+            if current_answer:
+                answers_with_steps.append("\n".join(current_answer).strip())
+                current_answer = []
 
+    formatted_questions = "\n\n".join(questions)
+    formatted_answers_with_steps = "\n\n".join(answers_with_steps)
 
-# 1. Memo Creation Function (must be defined first)
-def create_memo(response_text):
-    """Generate a memo text with answers from the response."""
-    memo = "Memo:\n\n"
-    questions = response_text.split("\n")
-    
-    for question in questions:
-        if "Answer:" in question:  # Extract lines containing answers
-            memo += question + "\n"
+    return formatted_questions, formatted_answers_with_steps
 
-    if memo.strip() == "Memo:":  # If no answers are found, add a note
-        memo += "No answers provided in response.\n"
-
-    return memo
-
-# 2. PDF Creation Function (uses create_memo)
-def create_pdf(task_description, response_text, file_name, task_type):
+def create_pdf(task_description, formatted_questions, file_name, task_type):
+    """Generates the task PDF including all questions."""
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -109,13 +117,15 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
     pdf.set_xy(10, 40)
-    pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nResponse:\n{response_text}")
+    pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nQuestions:\n{formatted_questions}")
 
     pdf.output(file_name)
 
-# 3. Memo PDF Creation Function (calls create_memo)
-def create_memo_pdf(answer_key, memo_file_name, task_type):
-    """Generate a memo PDF containing only the answer key."""
+
+
+# 1. Memo Creation Function (must be defined first)
+def create_memo_pdf(answers_with_steps, memo_file_name, task_type):
+    """Generates the memo PDF with answers and steps."""
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -128,12 +138,13 @@ def create_memo_pdf(answer_key, memo_file_name, task_type):
 
     pdf.set_xy(10, 40)
 
-    if answer_key.strip():
-        pdf.multi_cell(0, 10, txt=f"Answer Key:\n{answer_key}")
+    if answers_with_steps.strip():
+        pdf.multi_cell(0, 10, txt=f"Answer Key and Steps:\n\n{answers_with_steps}")
     else:
-        pdf.multi_cell(0, 10, txt="No answer key found.")
+        pdf.multi_cell(0, 10, txt="No answers or steps provided.")
 
     pdf.output(memo_file_name)
+
 
 
 
@@ -291,22 +302,21 @@ def task_generator():
                 task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
                 response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
-                # Extract and separate the answer key
-                filtered_response, answer_key = extract_answer_key(response_text)
+                # Extract questions, answers, and steps
+                formatted_questions, answers_with_steps = extract_questions_and_answers(response_text)
 
                 # Show the response text to the user
                 st.subheader("Generated Task Description and Response")
                 st.write(f"**Task Type:** {task_type}")
                 st.write(f"**Task Description:** {task_description}")
-                st.write(f"**Response from Intent Detection:** {filtered_response}")
+                st.write(f"**Full Questions:**\n\n{formatted_questions}")
 
-                # Create the Task PDF
+                # Create the PDFs
                 file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                create_pdf(task_description, filtered_response, file_name, task_type)
-
-                # Create the Memo PDF (Answer Key)
                 memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                create_memo_pdf(answer_key, memo_file_name, task_type)
+
+                create_pdf(task_description, formatted_questions, file_name, task_type)
+                create_memo_pdf(answers_with_steps, memo_file_name, task_type)
 
                 st.success("Task and Memo generated successfully!")
                 st.balloons()
@@ -319,18 +329,8 @@ def task_generator():
                     memo_pdf_data = memo_pdf.read()
 
                 # Individual download buttons
-                st.download_button(
-                    label="Download Task PDF",
-                    data=task_pdf_data,
-                    file_name=file_name,
-                    mime='application/pdf'
-                )
-                st.download_button(
-                    label="Download Memo PDF",
-                    data=memo_pdf_data,
-                    file_name=memo_file_name,
-                    mime='application/pdf'
-                )
+                st.download_button(label="Download Task PDF", data=task_pdf_data, file_name=file_name, mime='application/pdf')
+                st.download_button(label="Download Memo PDF", data=memo_pdf_data, file_name=memo_file_name, mime='application/pdf')
 
                 # Combined download button (ZIP both PDFs)
                 zip_filename = f"{task_type.replace(' ', '_')}_Task_and_Memo.zip"
@@ -344,15 +344,11 @@ def task_generator():
 
                 zip_buffer.seek(0)
 
-                st.download_button(
-                    label="Download Both PDFs (Task + Memo)",
-                    data=zip_buffer,
-                    file_name=zip_filename,
-                    mime="application/zip"
-                )
+                st.download_button(label="Download Both PDFs (Task + Memo)", data=zip_buffer, file_name=zip_filename, mime="application/zip")
 
         except Exception as e:
             st.error(f"An error occurred: {e}")
+
 
  
 
