@@ -12,6 +12,8 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import uuid
+import zipfile
+import io
 # Set the page configuration
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
 
@@ -268,88 +270,110 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
 	)
 
 
+
+
 def task_generator():
-st.subheader("Generate Educational Tasks")
+    st.subheader("Generate Educational Tasks")
 
-# Ensure session_id is initialized
-if 'session_id' not in st.session_state:
-st.session_state['session_id'] = generate_session_id()
+    # Ensure session_id is initialized
+    if 'session_id' not in st.session_state:
+        st.session_state['session_id'] = generate_session_id()
 
-# Task type input
-task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
-subject = st.text_input("Subject")
-grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
-curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
+    # Task type input
+    task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
+    subject = st.text_input("Subject")
+    grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
+    curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
 
-# Conditional inputs based on task type
-if task_type == "Lesson Plan":
-term = st.slider("Term", 1, 4)
-week = st.slider("Week", 1, 10)
-num_questions_or_term = term
-total_marks_or_week = week
-else:
-num_questions = st.slider("Number of Questions", 1, 10)
-total_marks = st.slider("Total Marks", 1, 100)
-num_questions_or_term = num_questions
-total_marks_or_week = total_marks
+    # Conditional inputs based on task type
+    if task_type == "Lesson Plan":
+        term = st.slider("Term", 1, 4)
+        week = st.slider("Week", 1, 10)
+        num_questions_or_term = term
+        total_marks_or_week = week
+    else:
+        num_questions = st.slider("Number of Questions", 1, 10)
+        total_marks = st.slider("Total Marks", 1, 100)
+        num_questions_or_term = num_questions
+        total_marks_or_week = total_marks
 
-# Generate task button
-if st.button("Generate Task"):
-try:
-    with st.spinner('Generating task, please wait...'):
-	task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-	response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
+    # Generate task button
+    if st.button("Generate Task"):
+        try:
+            with st.spinner('Generating task, please wait...'):
+                task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
+                response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
-	# Extract and separate the answer key
-	filtered_response, answer_key = extract_answer_key(response_text)
+                # Extract and separate the answer key
+                filtered_response, answer_key = extract_answer_key(response_text)
 
-	# Show the response text to the user
-	st.subheader("Generated Task Description and Response")
-	st.write(f"**Task Type:** {task_type}")
-	st.write(f"**Task Description:** {task_description}")
-	st.write(f"**Response from Intent Detection:** {filtered_response}")
+                # Show the response text to the user
+                st.subheader("Generated Task Description and Response")
+                st.write(f"**Task Type:** {task_type}")
+                st.write(f"**Task Description:** {task_description}")
+                st.write(f"**Response from Intent Detection:** {filtered_response}")
 
-	# Display extracted answer key in Streamlit
-	if answer_key.strip():
-	    st.subheader("Answer Key")
-	    st.write(answer_key)
-	else:
-	    st.write("No answers detected in the response.")
+                # Display extracted answer key in Streamlit
+                if answer_key.strip():
+                    st.subheader("Answer Key")
+                    st.write(answer_key)
+                else:
+                    st.write("No answers detected in the response.")
 
-	# Create the Task PDF
-	file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-	create_pdf(task_description, filtered_response, file_name, task_type)
+                # Generate file names
+                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                file_name = f"{task_type.replace(' ', '_')}_{timestamp}.pdf"
+                memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{timestamp}.pdf"
+                zip_file_name = f"{task_type.replace(' ', '_')}_Task_and_Memo_{timestamp}.zip"
 
-	# Create the Memo PDF (Answer Key)
-	memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-	create_memo_pdf(answer_key, memo_file_name, task_type)
+                # Create the PDFs
+                create_pdf(task_description, filtered_response, file_name, task_type)
+                create_memo_pdf(answer_key, memo_file_name, task_type)
 
-	st.success("Task and Memo generated successfully!")
-	st.balloons()
+                st.success("Task and Memo generated successfully!")
+                st.balloons()
 
-	# Read the PDF files into memory for download
-	with open(file_name, "rb") as task_pdf:
-	    task_pdf_data = task_pdf.read()
+                # Read the PDFs into memory for download
+                with open(file_name, "rb") as task_pdf:
+                    task_pdf_data = task_pdf.read()
 
-	with open(memo_file_name, "rb") as memo_pdf:
-	    memo_pdf_data = memo_pdf.read()
+                with open(memo_file_name, "rb") as memo_pdf:
+                    memo_pdf_data = memo_pdf.read()
 
-	# Individual download buttons
-	st.download_button(
-	    label="Download Task PDF",
-	    data=task_pdf_data,
-	    file_name=file_name,
-	    mime='application/pdf'
-	)
-	st.download_button(
-	    label="Download Memo PDF",
-	    data=memo_pdf_data,
-	    file_name=memo_file_name,
-	    mime='application/pdf'
-	)
+                # Individual download buttons
+                st.download_button(
+                    label="📄 Download Task PDF",
+                    data=task_pdf_data,
+                    file_name=file_name,
+                    mime='application/pdf'
+                )
+                st.download_button(
+                    label="📄 Download Memo PDF",
+                    data=memo_pdf_data,
+                    file_name=memo_file_name,
+                    mime='application/pdf'
+                )
 
-except Exception as e:
-    st.error(f"An error occurred: {e}")
+                # Create a ZIP file in memory
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+                    zip_file.writestr(file_name, task_pdf_data)
+                    zip_file.writestr(memo_file_name, memo_pdf_data)
+
+                zip_buffer.seek(0)  # Reset buffer position
+
+                # ZIP download button
+                st.download_button(
+                    label="📁 Download Both PDFs (Task + Memo) as ZIP",
+                    data=zip_buffer,
+                    file_name=zip_file_name,
+                    mime="application/zip"
+                )
+
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+
+
 
 
  
