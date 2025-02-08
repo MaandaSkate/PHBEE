@@ -102,6 +102,7 @@ def extract_questions_answers(response_text):
 
 
 
+
 def create_memo(response_text):
     """Generate a memo text with answers from the response."""
     _, formatted_answers = extract_questions_answers(response_text)
@@ -113,6 +114,21 @@ def create_memo(response_text):
         memo += "No answers provided.\n"
 
     return memo
+
+
+
+def create_memo(response_text):
+    """Generate a memo text with answers from the response."""
+    _, formatted_answers = extract_questions_answers(response_text)  # ✅ Correct function name
+    memo = "Memo:\n\n"
+
+    if formatted_answers.strip():
+        memo += f"Answer Key:\n\n{formatted_answers}\n"
+    else:
+        memo += "No answers provided.\n"
+
+    return memo
+
 
 
 
@@ -129,31 +145,11 @@ def create_memo_pdf(response_text, memo_file_name, task_type):
     pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
     pdf.set_xy(10, 40)
-    memo_text = create_memo(response_text)  # Extract and format answers only
+    memo_text = create_memo(response_text)  # ✅ Now extracts answers correctly
     pdf.multi_cell(0, 10, txt=memo_text)
 
     pdf.output(memo_file_name)
 
-
-
-def create_pdf(task_description, response_text, file_name, task_type):
-    """Generates the task PDF including all questions."""
-    formatted_questions, _ = extract_questions_answers_steps(response_text)
-
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"{task_type.capitalize()} / Assessment", ln=True, align='C')
-    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
-    pdf.ln(10)
-
-    pdf.set_fill_color(200, 220, 255)
-    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
-
-    pdf.set_xy(10, 40)
-    pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nQuestions:\n{formatted_questions}")
-
-    pdf.output(file_name)
 
 
 
