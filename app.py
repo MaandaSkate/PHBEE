@@ -12,8 +12,6 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import uuid
-import zipfile
-import io
 # Set the page configuration
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
 
@@ -51,73 +49,64 @@ def generate_session_id():
     return str(uuid.uuid4())
 
 def img_to_base64(image_path):
-    """Convert an image to a Base64-encoded string."""
     try:
         if not os.path.isfile(image_path):
             raise FileNotFoundError(f"The file {image_path} does not exist.")
-
         with open(image_path, "rb") as img_file:
             img_data = img_file.read()
-
-        return base64.b64encode(img_data).decode("utf-8")
-
+        return base64.b64encode(img_data).decode('utf-8')
     except FileNotFoundError as e:
         st.error(f"Error: {str(e)}")
-        return ""
-
+        return base64.b64encode(b'').decode('utf-8')
     except Exception as e:
         st.error(f"An unexpected error occurred: {str(e)}")
-        return ""
+        return base64.b64encode(b'').decode('utf-8')
 
-import re
-
-def extract_answer_key(response_text):
-    """Extracts only the correct answers from the generated response."""
+def extract_questions_and_answers(response_text):
+    """
+    Extracts the full questions along with their steps and answers.
+    Returns: Tuple (formatted_questions, answer_key_with_steps)
+    """
     lines = response_text.split("\n")
-    answer_key = []
+    questions = []
+    answers = []
+    current_question = []
+    current_answer = []
+    is_answer_section = False
+    is_steps_section = False
 
-    is_answer_key = False
     for line in lines:
-        # Detect explicit "Answer Key" section
-        if "Answer Key" in line or "Correct Answers" in line or "Answers:" in line:
-            is_answer_key = True
-            continue
+        stripped_line = line.strip()
 
-        if is_answer_key:
-            answer_key.append(line.strip())  # Store answer key separately
+        if "Answer Key" in stripped_line:
+            is_answer_section = True
+            continue  # Skip the "Answer Key" title itself
+
+        if "Steps to Answer" in stripped_line:
+            is_steps_section = True
+            continue  # Skip the "Steps to Answer" title itself
+
+        if is_answer_section:
+            current_answer.append(stripped_line)
         else:
-            # Detect inline answers like "Q1: ... Answer: ..."
-            match = re.search(r"Answer:\s*(.*)", line, re.IGNORECASE)
-            if match:
-                correct_answer = match.group(1).strip()
-                answer_key.append(correct_answer)
+            current_question.append(stripped_line)
 
-    return "\n".join(answer_key) if answer_key else "No answers detected."
+        if stripped_line == "":
+            if current_question:
+                questions.append("\n".join(current_question).strip())
+                current_question = []
+            if current_answer:
+                answers.append("\n".join(current_answer).strip())
+                current_answer = []
+
+    formatted_questions = "\n\n".join(questions)
+    answer_key_with_steps = "\n\n".join(answers)
+
+    return formatted_questions, answer_key_with_steps
 
 
-
-
-
-# 1. Memo Creation Function (must be defined first)
-
-def create_memo(response_text):
-    """Generate a memo text with answers from the response."""
-    memo = "Memo:\n\n"
-    questions = response_text.split("\n")
-    
-    for question in questions:
-        if "Answer:" in question:  # Extract lines containing answers
-            memo += question + "\n"
-
-    if memo.strip() == "Memo:":  # If no answers are found, add a note
-        memo += "No answers provided in response.\n"
-
-    return memo
-
-def create_memo_pdf(response_text, memo_file_name, task_type):
-    """Generate a memo PDF containing only the answer key."""
-    memo_text = create_memo(response_text)  # Extract only answers
-    
+def create_memo_pdf(answer_key_with_steps, memo_file_name, task_type):
+    """Generate a memo PDF containing only the answer key and steps if available."""
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -129,10 +118,13 @@ def create_memo_pdf(response_text, memo_file_name, task_type):
     pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
     pdf.set_xy(10, 40)
-    pdf.multi_cell(0, 10, txt=memo_text)
+
+    if answer_key_with_steps.strip():
+        pdf.multi_cell(0, 10, txt=f"Answer Key and Steps:\n\n{answer_key_with_steps}")
+    else:
+        pdf.multi_cell(0, 10, txt="No answers or steps provided.")
 
     pdf.output(memo_file_name)
-
 
 # 2. PDF Creation Function (uses create_memo)
 def create_pdf(task_description, response_text, file_name, task_type):
@@ -178,8 +170,6 @@ def create_memo_pdf(answer_key, memo_file_name, task_type):
 
 
 
-
-
 def detect_intent_text(client, project_id, agent_id, session_id, text, language_code="en"):
     try:
         session_path = f"projects/{project_id}/locations/global/agents/{agent_id}/sessions/{session_id}"
@@ -192,8 +182,6 @@ def detect_intent_text(client, project_id, agent_id, session_id, text, language_
         st.error(f"Error detecting intent: {e}")
         return "An error occurred while processing your request."
 
-
-# Function to display messages in the chat
 def display_message(sender, message):
     if sender == "user":
         st.markdown(f'''
@@ -204,7 +192,7 @@ def display_message(sender, message):
                 <img src="data:image/png;base64,{img_to_base64('image/PHBEE USER ICON.png')}" 
                      style="width: 40px; height: 40px; border-radius: 50%; margin-left: 10px;">
             </div>
-        ''', unsafe_allow_html=True)
+            ''', unsafe_allow_html=True)
     else:
         st.markdown(f'''
             <div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">
@@ -214,8 +202,7 @@ def display_message(sender, message):
                     {message}
                 </div>
             </div>
-        ''', unsafe_allow_html=True)
-
+            ''', unsafe_allow_html=True)
 
 
 
@@ -223,14 +210,16 @@ def display_message(sender, message):
 # Chatbot logic
 
 
-# Function to generate a session ID
+
 def generate_session_id():
     """Generate a unique session ID."""
     return str(uuid.uuid4())
 
-# Function to handle chatbot interaction
+
+
 def chatbot():
     """Main function to handle the chatbot interaction."""
+    # Initialize chat history and session ID
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
 
@@ -240,24 +229,37 @@ def chatbot():
     st.title("Chat with PHBEE 🐝")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
+    # Initial bot greeting if no history exists
     if not st.session_state['chat_history']:
         display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
-    user_input = st.text_input("Type your message here:", placeholder="Ask me anything...")
+    # Input field for user input
+    user_input = st.text_input(
+        "Type your message here:", 
+        placeholder="Ask me anything..."
+    )
 
-    if st.button("Send") and user_input:
+    # Send button to manually trigger sending the message
+    if st.button("Send") and user_input:  # User can either press 'Send' or hit 'Enter'
         with st.spinner('Processing...'):
             response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
 
+        # Display user and bot messages
         display_message("user", user_input)
         display_message("PHBEE", response)
 
+        # Append both messages to the chat history
         st.session_state['chat_history'].append({"sender": "user", "message": user_input})
         st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
+        # Clear input field after sending the message
+        user_input = ""
+
+    # Clear chat history button
     if st.button("Clear Chat"):
         st.session_state['chat_history'] = []
 
+    # Display chat history
     for chat in st.session_state['chat_history']:
         if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
             display_message(chat['sender'], chat['message'])
@@ -287,17 +289,21 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
         )
 
 
+
 def task_generator():
     st.subheader("Generate Educational Tasks")
 
+    # Ensure session_id is initialized
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = generate_session_id()
 
+    # Task type input
     task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
     subject = st.text_input("Subject")
     grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
     curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
 
+    # Conditional inputs based on task type
     if task_type == "Lesson Plan":
         term = st.slider("Term", 1, 4)
         week = st.slider("Week", 1, 10)
@@ -309,50 +315,75 @@ def task_generator():
         num_questions_or_term = num_questions
         total_marks_or_week = total_marks
 
+    # Generate task button
     if st.button("Generate Task"):
         try:
             with st.spinner('Generating task, please wait...'):
                 task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
                 response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
-                # Extract answers separately
-                answer_key = extract_answer_key(response_text)
+                # Extract full questions and the answer key with steps
+                formatted_questions, answer_key_with_steps = extract_questions_and_answers(response_text)
 
+                # Show the response text to the user
                 st.subheader("Generated Task Description and Response")
                 st.write(f"**Task Type:** {task_type}")
                 st.write(f"**Task Description:** {task_description}")
-                st.write(f"**Response from Intent Detection:** {response_text}")
+                st.write(f"**Full Questions:**\n\n{formatted_questions}")
 
-                st.subheader("Answer Key")
-                st.write(answer_key)
+                # Create the Task PDF
+                file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_pdf(task_description, formatted_questions, file_name, task_type)
 
-                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-                file_name = f"{task_type.replace(' ', '_')}_{timestamp}.pdf"
-                memo_file_name = f"Memo_{task_type.replace(' ', '_')}_{timestamp}.pdf"
-
-                create_pdf(task_description, response_text, file_name, task_type)
-                create_memo_pdf(response_text, memo_file_name, task_type)  # ✅ Now extracts answers correctly
+                # Create the Memo PDF (Answer Key + Steps)
+                memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_memo_pdf(answer_key_with_steps, memo_file_name, task_type)
 
                 st.success("Task and Memo generated successfully!")
+                st.balloons()
 
+                # Read the PDF files into memory for download
                 with open(file_name, "rb") as task_pdf:
                     task_pdf_data = task_pdf.read()
 
                 with open(memo_file_name, "rb") as memo_pdf:
                     memo_pdf_data = memo_pdf.read()
 
-                st.download_button("📄 Download Task PDF", data=task_pdf_data, file_name=file_name, mime='application/pdf')
-                st.download_button("📄 Download Memo PDF", data=memo_pdf_data, file_name=memo_file_name, mime='application/pdf')
+                # Individual download buttons
+                st.download_button(
+                    label="Download Task PDF",
+                    data=task_pdf_data,
+                    file_name=file_name,
+                    mime='application/pdf'
+                )
+                st.download_button(
+                    label="Download Memo PDF",
+                    data=memo_pdf_data,
+                    file_name=memo_file_name,
+                    mime='application/pdf'
+                )
+
+                # Combined download button (ZIP both PDFs)
+                zip_filename = f"{task_type.replace(' ', '_')}_Task_and_Memo.zip"
+                import zipfile
+                import io
+
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+                    zip_file.writestr(file_name, task_pdf_data)
+                    zip_file.writestr(memo_file_name, memo_pdf_data)
+
+                zip_buffer.seek(0)
+
+                st.download_button(
+                    label="Download Both PDFs (Task + Memo)",
+                    data=zip_buffer,
+                    file_name=zip_filename,
+                    mime="application/zip"
+                )
 
         except Exception as e:
             st.error(f"An error occurred: {e}")
-
-
-
-
-
-
-
 
  
 
@@ -365,7 +396,6 @@ def free_task():
     st.markdown("Generate a custom PDF based on your request.")
 
     request_text = st.text_area("Enter your request")
-    
     if st.button("Generate Free Task"):
         if request_text.strip():
             with st.spinner("Generating..."):
@@ -396,9 +426,6 @@ def free_task():
         else:
             st.error("Please enter a valid request.")
 
-
-
-
 # All Classwork logic
 def all_classwork():
     st.subheader("All Classwork")
@@ -419,70 +446,56 @@ def all_classwork():
     # Handle Explainer and Summary differently (no marks, focus on concepts)
     if task_type in ["Explainer", "Summary"]:
         explanation_topic = st.text_area("Enter the topic or concept to be explained", placeholder="e.g., Pythagorean Theorem")
-        
         if st.button(f"Generate {task_type}"):
             if subject and grade and curriculum and explanation_topic:
                 task_description = f"Create a detailed {task_type} on {explanation_topic} for {subject} (Grade {grade}, {curriculum}). Focus on explaining the concept in a clear and engaging way."
-                
                 with st.spinner("Generating..."):
                     response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
                 st.markdown(f"**Generated {task_type}:** {task_description}")
                 st.markdown(f"**Response:** {response_text}")
-
+                
                 # Generate PDF
                 pdf_file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 create_pdf(task_description, response_text, pdf_file_name, task_type)
 
                 # Provide a download link for the PDF
-                with open(pdf_file_name, "rb") as file:
-                    pdf_data = file.read()
-
-                st.download_button(
-                    label=f"📄 Download {task_type} PDF",
-                    data=pdf_data,
-                    file_name=pdf_file_name,
-                    mime="application/pdf"
-                )
+                st.markdown(f"""
+                <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
+                <div style="background-color: #FFCC00; color: white; padding: 10px; border-radius: 5px; text-align: center; max-width: 200px;">
+                Download {pdf_file_name}
+                </div>
+                </a>
+                """, unsafe_allow_html=True)
             else:
                 st.error("Please provide all required inputs.")
     else:
         # Existing task logic for other task types
         num_questions = st.slider("Number of questions", min_value=1, max_value=10)
         total_marks = st.slider("Total marks", min_value=1, max_value=100)
-        
         if st.button(f"Generate {task_type}"):
             if subject and grade and curriculum:
                 task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions, total_marks)
-                
                 with st.spinner("Generating..."):
                     response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
                 st.markdown(f"**Generated {task_type}:** {task_description}")
                 st.markdown(f"**Response:** {response_text}")
-
+                
                 # Generate PDF
                 pdf_file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 create_pdf(task_description, response_text, pdf_file_name, task_type)
 
                 # Provide a download link for the PDF
-                with open(pdf_file_name, "rb") as file:
-                    pdf_data = file.read()
-
-                st.download_button(
-                    label=f"📄 Download {task_type} PDF",
-                    data=pdf_data,
-                    file_name=pdf_file_name,
-                    mime="application/pdf"
-                )
+                st.markdown(f"""
+                <a href="data:application/octet-stream;base64,{base64.b64encode(open(pdf_file_name, 'rb').read()).decode()}" download="{pdf_file_name}">
+                <div style="background-color: #FFCC00; color: white; padding: 10px; border-radius: 5px; text-align: center; max-width: 200px;">
+                Download {pdf_file_name}
+                </div>
+                </a>
+                """, unsafe_allow_html=True)
             else:
                 st.error("Please provide all required inputs.")
-
-
-import smtplib
-import streamlit as st
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 # Send Email Function
 def send_email(to_email, subject, body):
@@ -536,10 +549,6 @@ def feedback_form():
     if st.button("Submit Feedback"):
         submit_feedback(rating, best_feature, feedback, contact_info)
 
-
-import streamlit as st
-from streamlit_option_menu import option_menu
-
 # Main function to handle page navigation
 def main():
     # Sidebar menu with icons
@@ -554,7 +563,7 @@ def main():
 
     # Page content logic based on selection
     if selected == "Home":
-        st.title('Welcome to PHBEE 🚀')
+        st.title('Welcome to PHBEE :rocket:')
         st.header("Your AI Powered Educational Chatbot 🏠")
         st.markdown('''
         ####
