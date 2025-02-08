@@ -502,14 +502,19 @@ def all_classwork():
                 st.error("Please provide all required inputs.")
 
 
+import smtplib
+import streamlit as st
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 # Send Email Function
 def send_email(to_email, subject, body):
     try:
-	from_email = st.secrets["email"]["email"]
-	email_password = st.secrets["email"]["email_password"]
+        from_email = st.secrets["email"]["email"]
+        email_password = st.secrets["email"]["email_password"]
     except KeyError as e:
-	st.error(f"Error: Missing secret key {e}")
-	return
+        st.error(f"Error: Missing secret key {e}")
+        return
 
     msg = MIMEMultipart()
     msg["From"] = from_email
@@ -518,16 +523,16 @@ def send_email(to_email, subject, body):
     msg.attach(MIMEText(body, "plain"))
 
     try:
-	server = smtplib.SMTP("smtp.gmail.com", 587)
-	server.starttls()
-	server.login(from_email, email_password)
-	server.sendmail(from_email, to_email, msg.as_string())
-	server.quit()
-	st.success("Email sent successfully!")
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(from_email, email_password)
+        server.sendmail(from_email, to_email, msg.as_string())
+        server.quit()
+        st.success("Email sent successfully!")
     except smtplib.SMTPAuthenticationError as e:
-	st.error(f"Authentication error: {e}")
+        st.error(f"Authentication error: {e}")
     except Exception as e:
-	st.error(f"An error occurred: {e}")
+        st.error(f"An error occurred: {e}")
 
 # Function to submit feedback
 def submit_feedback(rating, best_feature, feedback, contact_info):
@@ -542,7 +547,7 @@ def feedback_form():
     
     # Best feature ranking input
     best_feature = st.selectbox("What is PHBEE's best feature?", 
-				["Chatbot", "Task Generator", "All Classwork", "Free Task", "Others"])
+                                ["Chatbot", "Task Generator", "All Classwork", "Free Task", "Others"])
     
     # General feedback input
     feedback = st.text_area("Any other feedback?")
@@ -552,7 +557,8 @@ def feedback_form():
 
     # Submit button
     if st.button("Submit Feedback"):
-	submit_feedback(rating, best_feature, feedback, contact_info)
+        submit_feedback(rating, best_feature, feedback, contact_info)
+
 
 # Main function to handle page navigation
 def main():
