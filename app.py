@@ -49,18 +49,23 @@ def generate_session_id():
     return str(uuid.uuid4())
 
 def img_to_base64(image_path):
+    """Convert an image to a Base64-encoded string."""
     try:
-	if not os.path.isfile(image_path):
-	    raise FileNotFoundError(f"The file {image_path} does not exist.")
-	with open(image_path, "rb") as img_file:
-	    img_data = img_file.read()
-	return base64.b64encode(img_data).decode('utf-8')
+        if not os.path.isfile(image_path):
+            raise FileNotFoundError(f"The file {image_path} does not exist.")
+
+        with open(image_path, "rb") as img_file:
+            img_data = img_file.read()
+
+        return base64.b64encode(img_data).decode("utf-8")
+
     except FileNotFoundError as e:
-	st.error(f"Error: {str(e)}")
-	return base64.b64encode(b'').decode('utf-8')
+        st.error(f"Error: {str(e)}")
+        return ""
+
     except Exception as e:
-	st.error(f"An unexpected error occurred: {str(e)}")
-	return base64.b64encode(b'').decode('utf-8')
+        st.error(f"An unexpected error occurred: {str(e)}")
+        return ""
 
 def extract_answer_key(response_text):
     """Extracts the answer key from the response text and returns it separately."""
