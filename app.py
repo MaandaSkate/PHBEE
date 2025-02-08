@@ -90,26 +90,28 @@ def extract_answer_key(response_text):
 # 1. Memo Creation Function (must be defined first)
 
 
+
 def create_memo_pdf(answer_key, memo_file_name, task_type):
-"""Generate a memo PDF containing the extracted answer key or a fallback message."""
-pdf = FPDF()
-pdf.add_page()
-pdf.set_font("Arial", size=12)
-pdf.cell(200, 10, txt=f"{task_type.capitalize()} Memo", ln=True, align='C')
-pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
-pdf.ln(10)
+    """Generate a memo PDF containing the extracted answer key or a fallback message."""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"{task_type.capitalize()} Memo", ln=True, align='C')
+    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
+    pdf.ln(10)
 
-pdf.set_fill_color(200, 220, 255)
-pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
+    pdf.set_fill_color(200, 220, 255)
+    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
-pdf.set_xy(10, 40)
+    pdf.set_xy(10, 40)
 
-if answer_key.strip():
-pdf.multi_cell(0, 10, txt=f"**Answer Key:**\n{answer_key}")
-else:
-pdf.multi_cell(0, 10, txt="No answers found in the response.")
+    if answer_key.strip():
+        pdf.multi_cell(0, 10, txt=f"**Answer Key:**\n{answer_key}")
+    else:
+        pdf.multi_cell(0, 10, txt="No answers found in the response.")
 
-pdf.output(memo_file_name)
+    pdf.output(memo_file_name)
+
 
 
 # 2. PDF Creation Function (uses create_memo)
