@@ -174,27 +174,29 @@ def detect_intent_text(client, project_id, agent_id, session_id, text, language_
         return "An error occurred while processing your request."
 
 
+# Function to display messages in the chat
 def display_message(sender, message):
     if sender == "user":
-	st.markdown(f'''
-	    <div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-end;">
-		<div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px; word-wrap: break-word;">
-		    {message}
-		</div>
-		<img src="data:image/png;base64,{img_to_base64('image/PHBEE USER ICON.png')}" 
-		     style="width: 40px; height: 40px; border-radius: 50%; margin-left: 10px;">
-	    </div>
-	    ''', unsafe_allow_html=True)
+        st.markdown(f'''
+            <div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-end;">
+                <div style="background-color: #f0f0f0; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px; word-wrap: break-word;">
+                    {message}
+                </div>
+                <img src="data:image/png;base64,{img_to_base64('image/PHBEE USER ICON.png')}" 
+                     style="width: 40px; height: 40px; border-radius: 50%; margin-left: 10px;">
+            </div>
+        ''', unsafe_allow_html=True)
     else:
-	st.markdown(f'''
-	    <div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">
-		<img src="data:image/png;base64,{img_to_base64('image/PHBEE LOGO FINAL.png')}" 
-		     style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
-		<div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px; word-wrap: break-word;">
-		    {message}
-		</div>
-	    </div>
-	    ''', unsafe_allow_html=True)
+        st.markdown(f'''
+            <div style="display: flex; align-items: center; margin-bottom: 10px; justify-content: flex-start;">
+                <img src="data:image/png;base64,{img_to_base64('image/PHBEE LOGO FINAL.png')}" 
+                     style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
+                <div style="background-color: #DCF8C6; border-radius: 10px; padding: 10px; max-width: 70%; font-size: 16px; word-wrap: break-word;">
+                    {message}
+                </div>
+            </div>
+        ''', unsafe_allow_html=True)
+
 
 
 
