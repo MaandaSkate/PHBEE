@@ -297,6 +297,13 @@ def task_generator():
                 st.write(f"**Task Description:** {task_description}")
                 st.write(f"**Response from Intent Detection:** {filtered_response}")
 
+                # Display extracted answer key in Streamlit
+                if answer_key.strip():
+                    st.subheader("Answer Key")
+                    st.write(answer_key)
+                else:
+                    st.write("No answers detected in the response.")
+
                 # Create the Task PDF
                 file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 create_pdf(task_description, filtered_response, file_name, task_type)
@@ -317,13 +324,13 @@ def task_generator():
 
                 # Individual download buttons
                 st.download_button(
-                    label="Download Task PDF",
+                    label="📄 Download Task PDF",
                     data=task_pdf_data,
                     file_name=file_name,
                     mime='application/pdf'
                 )
                 st.download_button(
-                    label="Download Memo PDF",
+                    label="📄 Download Memo PDF",
                     data=memo_pdf_data,
                     file_name=memo_file_name,
                     mime='application/pdf'
@@ -331,9 +338,6 @@ def task_generator():
 
                 # Combined download button (ZIP both PDFs)
                 zip_filename = f"{task_type.replace(' ', '_')}_Task_and_Memo.zip"
-                import zipfile
-                import io
-
                 zip_buffer = io.BytesIO()
                 with zipfile.ZipFile(zip_buffer, "w") as zip_file:
                     zip_file.writestr(file_name, task_pdf_data)
@@ -342,7 +346,7 @@ def task_generator():
                 zip_buffer.seek(0)
 
                 st.download_button(
-                    label="Download Both PDFs (Task + Memo)",
+                    label="📁 Download Both PDFs (Task + Memo)",
                     data=zip_buffer,
                     file_name=zip_filename,
                     mime="application/zip"
