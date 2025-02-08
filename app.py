@@ -388,35 +388,37 @@ def free_task():
     st.markdown("Generate a custom PDF based on your request.")
 
     request_text = st.text_area("Enter your request")
+    
     if st.button("Generate Free Task"):
-	if request_text.strip():
-	    with st.spinner("Generating..."):
-		response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], request_text)
-		
-		pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-		create_pdf(request_text, response_text, pdf_file_name, "Free Task")
+        if request_text.strip():
+            with st.spinner("Generating..."):
+                response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], request_text)
+                
+                pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_pdf(request_text, response_text, pdf_file_name, "Free Task")
 
-		memo_file_name = f"Free_Task_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-		create_memo_pdf(response_text, memo_file_name, "Free Task")
+                memo_file_name = f"Free_Task_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                create_memo_pdf(response_text, memo_file_name, "Free Task")
 
-		st.markdown(f"**Generated PDF:** {request_text}")
-		st.markdown(f"**Response:** {response_text}")
+                st.markdown(f"**Generated PDF:** {request_text}")
+                st.markdown(f"**Response:** {response_text}")
 
-		# Provide download buttons
-		st.download_button(
-		    label="Download Task PDF",
-		    data=open(pdf_file_name, "rb").read(),
-		    file_name=pdf_file_name,
-		    mime='application/pdf'
-		)
-		st.download_button(
-		    label="Download Memo PDF",
-		    data=open(memo_file_name, "rb").read(),
-		    file_name=memo_file_name,
-		    mime='application/pdf'
-		)
-	else:
-	    st.error("Please enter a valid request.")
+                # Provide download buttons
+                st.download_button(
+                    label="Download Task PDF",
+                    data=open(pdf_file_name, "rb").read(),
+                    file_name=pdf_file_name,
+                    mime='application/pdf'
+                )
+                st.download_button(
+                    label="Download Memo PDF",
+                    data=open(memo_file_name, "rb").read(),
+                    file_name=memo_file_name,
+                    mime='application/pdf'
+                )
+        else:
+            st.error("Please enter a valid request.")
+
 
 # All Classwork logic
 def all_classwork():
