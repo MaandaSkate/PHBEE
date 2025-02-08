@@ -204,61 +204,46 @@ def display_message(sender, message):
 # Chatbot logic
 
 
-
+# Function to generate a session ID
 def generate_session_id():
     """Generate a unique session ID."""
     return str(uuid.uuid4())
 
-
-
+# Function to handle chatbot interaction
 def chatbot():
     """Main function to handle the chatbot interaction."""
-    # Initialize chat history and session ID
     if 'chat_history' not in st.session_state:
-	st.session_state['chat_history'] = []
+        st.session_state['chat_history'] = []
 
     if 'session_id' not in st.session_state:
-	st.session_state['session_id'] = generate_session_id()
+        st.session_state['session_id'] = generate_session_id()
 
     st.title("Chat with PHBEE 🐝")
     st.markdown("<h2 style='text-align: center;'>Welcome to the PHBEE Chatbot!</h2>", unsafe_allow_html=True)
 
-    # Initial bot greeting if no history exists
     if not st.session_state['chat_history']:
-	display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
+        display_message("PHBEE", "Greetings! I am PHBEE, your Educational AI assistant! How can I assist you today?")
 
-    # Input field for user input
-    user_input = st.text_input(
-	"Type your message here:", 
-	placeholder="Ask me anything..."
-    )
+    user_input = st.text_input("Type your message here:", placeholder="Ask me anything...")
 
-    # Send button to manually trigger sending the message
-    if st.button("Send") and user_input:  # User can either press 'Send' or hit 'Enter'
-	with st.spinner('Processing...'):
-	    response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
+    if st.button("Send") and user_input:
+        with st.spinner('Processing...'):
+            response = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], user_input, "en")
 
-	# Display user and bot messages
-	display_message("user", user_input)
-	display_message("PHBEE", response)
+        display_message("user", user_input)
+        display_message("PHBEE", response)
 
-	# Append both messages to the chat history
-	st.session_state['chat_history'].append({"sender": "user", "message": user_input})
-	st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
+        st.session_state['chat_history'].append({"sender": "user", "message": user_input})
+        st.session_state['chat_history'].append({"sender": "PHBEE", "message": response})
 
-	# Clear input field after sending the message
-	user_input = ""
-
-    # Clear chat history button
     if st.button("Clear Chat"):
-	st.session_state['chat_history'] = []
+        st.session_state['chat_history'] = []
 
-    # Display chat history
     for chat in st.session_state['chat_history']:
-	if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
-	    display_message(chat['sender'], chat['message'])
-	else:
-	    st.error("Chat history contains invalid data.")
+        if isinstance(chat, dict) and 'sender' in chat and 'message' in chat:
+            display_message(chat['sender'], chat['message'])
+        else:
+            st.error("Chat history contains invalid data.")
 
 
 
