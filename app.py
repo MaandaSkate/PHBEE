@@ -62,10 +62,6 @@ def img_to_base64(image_path):
         st.error(f"An unexpected error occurred: {str(e)}")
         return base64.b64encode(b'').decode('utf-8')
 
-
-
-
-
 def extract_questions_answers(response_text):
     """
     Extracts full questions and their answers.
@@ -102,11 +98,6 @@ def extract_questions_answers(response_text):
 
 
 
-
-
-
-
-
 def create_memo(response_text):
     """Generate a memo text with answers from the response."""
     _, formatted_answers = extract_questions_answers(response_text)  # ✅ Correct function name
@@ -118,7 +109,6 @@ def create_memo(response_text):
         memo += "No answers provided.\n"
 
     return memo
-
 
 
 
@@ -140,9 +130,11 @@ def create_memo_pdf(response_text, memo_file_name, task_type):
 
     pdf.output(memo_file_name)
 
+
+
 def create_pdf(task_description, response_text, file_name, task_type):
     """Generates the task PDF including all questions."""
-    formatted_questions, _ = extract_questions_answers_steps(response_text)
+    formatted_questions, _ = extract_questions_answers(response_text)  # ✅ Use correct function name
 
     pdf = FPDF()
     pdf.add_page()
@@ -158,6 +150,9 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.multi_cell(0, 10, txt=f"Task Description:\n{task_description}\n\nQuestions:\n{formatted_questions}")
 
     pdf.output(file_name)
+
+
+
 
 
 
@@ -321,7 +316,7 @@ def task_generator():
                 st.write(f"**Task Description:** {task_description}")
                 st.write(f"**Response from Intent Detection:** {response_text}")
 
-                # Create the PDFs
+                # Create PDFs
                 file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
 
@@ -331,48 +326,19 @@ def task_generator():
                 st.success(f"Task and memo generated successfully!")
                 st.balloons()
 
-                # Store the PDF data before using download buttons
+                # Provide download buttons
                 with open(file_name, "rb") as task_pdf:
                     task_pdf_data = task_pdf.read()
 
                 with open(memo_file_name, "rb") as memo_pdf:
                     memo_pdf_data = memo_pdf.read()
 
-                # Provide download buttons for both PDFs
-                st.download_button(
-                    label="Download Task PDF",
-                    data=task_pdf_data,
-                    file_name=file_name,
-                    mime='application/pdf'
-                )
-                st.download_button(
-                    label="Download Memo PDF",
-                    data=memo_pdf_data,
-                    file_name=memo_file_name,
-                    mime='application/pdf'
-                )
-
-                # Combined download button (ZIP both PDFs)
-                import zipfile
-                import io
-
-                zip_filename = f"{task_type.replace(' ', '_')}_Task_and_Memo.zip"
-                zip_buffer = io.BytesIO()
-                with zipfile.ZipFile(zip_buffer, "w") as zip_file:
-                    zip_file.writestr(file_name, task_pdf_data)
-                    zip_file.writestr(memo_file_name, memo_pdf_data)
-
-                zip_buffer.seek(0)
-
-                st.download_button(
-                    label="Download Both PDFs (Task + Memo)",
-                    data=zip_buffer,
-                    file_name=zip_filename,
-                    mime="application/zip"
-                )
+                st.download_button(label="Download Task PDF", data=task_pdf_data, file_name=file_name, mime='application/pdf')
+                st.download_button(label="Download Memo PDF", data=memo_pdf_data, file_name=memo_file_name, mime='application/pdf')
 
         except Exception as e:
             st.error(f"An error occurred: {e}")
+
 
 
 
