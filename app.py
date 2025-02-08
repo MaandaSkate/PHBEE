@@ -560,48 +560,51 @@ def feedback_form():
         submit_feedback(rating, best_feature, feedback, contact_info)
 
 
+import streamlit as st
+from streamlit_option_menu import option_menu
+
 # Main function to handle page navigation
 def main():
     # Sidebar menu with icons
     with st.sidebar:
-	selected = option_menu(
-	    menu_title="PHBEE Educational AI",
-	    options=["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task", "Feedback"],
-	    icons=["house", "robot", "file-text", "clipboard-data", "pencil-square", "chat-right-dots"],
-	    menu_icon="cast",
-	    default_index=0,
-	)
+        selected = option_menu(
+            menu_title="PHBEE Educational AI",
+            options=["Home", "Chatbot", "Task Generator", "All Classwork", "Free Task", "Feedback"],
+            icons=["house", "robot", "file-text", "clipboard-data", "pencil-square", "chat-right-dots"],
+            menu_icon="cast",
+            default_index=0,
+        )
 
     # Page content logic based on selection
     if selected == "Home":
-	st.title('Welcome to PHBEE :rocket:')
-	st.header("Your AI Powered Educational Chatbot 🏠")
-	st.markdown('''
-	####
-	PHBEE is an AI-powered educational chatbot designed to assist teachers, school administrators, and educational department workers in South Africa by automating the creation of educational materials.
+        st.title('Welcome to PHBEE 🚀')
+        st.header("Your AI Powered Educational Chatbot 🏠")
+        st.markdown('''
+        ####
+        PHBEE is an AI-powered educational chatbot designed to assist teachers, school administrators, and educational department workers in South Africa by automating the creation of educational materials.
 
-	PHBEE is trained on both CAPS and IEB standards from grade R to 12. It can help create lesson plans, assessments, marking rubrics, tests, exams, and timetables. Additionally, it assists in creating school management plans, policies, and tracking student progress, ensuring effective communication between schools and parents.
+        PHBEE is trained on both CAPS and IEB standards from grade R to 12. It can help create lesson plans, assessments, marking rubrics, tests, exams, and timetables. Additionally, it assists in creating school management plans, policies, and tracking student progress, ensuring effective communication between schools and parents.
 
-	With PHBEE, you can develop curriculums, frameworks, policies, and procedures based on current regulations. The chatbot helps students with their homework, tasks, and understanding of subject concepts, all aligned with IEB and CAPS standards.
-	''')
-	st.markdown("#### `Get Started Now!`, find the navigation arrow on the top left")
-	st.video("https://www.youtube.com/watch?v=HlaGFOQ-aLk")
-	st.image("image/PHBEE LOGO FINAL.png", use_container_width=True)
+        With PHBEE, you can develop curriculums, frameworks, policies, and procedures based on current regulations. The chatbot helps students with their homework, tasks, and understanding of subject concepts, all aligned with IEB and CAPS standards.
+        ''')
+        st.markdown("#### `Get Started Now!`, find the navigation arrow on the top left")
+        st.video("https://www.youtube.com/watch?v=HlaGFOQ-aLk")
+        st.image("image/PHBEE LOGO FINAL.png", use_container_width=True)
 
     elif selected == "Chatbot":
-	chatbot()
+        chatbot()
 
     elif selected == "Task Generator":
-	task_generator()
+        task_generator()
 
     elif selected == "All Classwork":
-	all_classwork()
+        all_classwork()
 
     elif selected == "Free Task":
-	free_task()
+        free_task()
 
     elif selected == "Feedback":
-	feedback_form()
+        feedback_form()
 
 # Run the app
 if __name__ == "__main__":
