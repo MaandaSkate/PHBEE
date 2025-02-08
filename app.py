@@ -69,47 +69,41 @@ def img_to_base64(image_path):
         st.error(f"An unexpected error occurred: {str(e)}")
         return ""
 
-import re
-
 def extract_answer_key(response_text):
-    """Extracts only the correct answers from the generated response."""
+    """Extracts the answer key from the response text and returns it separately."""
     lines = response_text.split("\n")
+    main_text = []
     answer_key = []
 
+    is_answer_key = False
     for line in lines:
-        # Identify correct answers using patterns like "Correct Answer: (b)" or "Answer: x = 5"
-        match = re.search(r"Correct Answer:\s*(.*)|Answer:\s*(.*)", line, re.IGNORECASE)
-        if match:
-            correct_answer = match.group(1) or match.group(2)
-            answer_key.append(correct_answer.strip())
+        if "Answer Key" in line:  # Detect where the answer key starts
+            is_answer_key = True
+            continue
+        if is_answer_key:
+            answer_key.append(line.strip())  # Store answer key separately
+        else:
+            main_text.append(line.strip())  # Store main task response
 
-    return "\n".join(answer_key) if answer_key else "No answers detected."
-
-
-
-
-
-def create_memo_pdf(answer_key, memo_file_name):
-    """Generate a memo PDF containing only the extracted answer key."""
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Memo - Answer Key", ln=True, align='C')
-    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
-    pdf.ln(10)
-
-    pdf.set_fill_color(200, 220, 255)
-    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
-
-    pdf.set_xy(10, 40)
-    pdf.multi_cell(0, 10, txt=f"**Answer Key:**\n{answer_key}" if answer_key.strip() else "No answers found.")
-
-    pdf.output(memo_file_name)
+    return "\n".join(main_text), "\n".join(answer_key)
 
 
 
 
+# 1. Memo Creation Function (must be defined first)
+def create_memo(response_text):
+    """Generate a memo text with answers from the response."""
+    memo = "Memo:\n\n"
+    questions = response_text.split("\n")
+    
+    for question in questions:
+        if "Answer:" in question:  # Extract lines containing answers
+            memo += question + "\n"
 
+    if memo.strip() == "Memo:":  # If no answers are found, add a note
+        memo += "No answers provided in response.\n"
+
+    return memo
 
 # 2. PDF Creation Function (uses create_memo)
 def create_pdf(task_description, response_text, file_name, task_type):
@@ -129,6 +123,26 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.output(file_name)
 
 # 3. Memo PDF Creation Function (calls create_memo)
+def create_memo_pdf(answer_key, memo_file_name, task_type):
+    """Generate a memo PDF containing only the answer key."""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"{task_type.capitalize()} Memo", ln=True, align='C')
+    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
+    pdf.ln(10)
+
+    pdf.set_fill_color(200, 220, 255)
+    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
+
+    pdf.set_xy(10, 40)
+
+    if answer_key.strip():
+        pdf.multi_cell(0, 10, txt=f"Answer Key:\n{answer_key}")
+    else:
+        pdf.multi_cell(0, 10, txt="No answer key found.")
+
+    pdf.output(memo_file_name)
 
 
 
