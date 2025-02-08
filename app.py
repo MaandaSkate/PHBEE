@@ -132,6 +132,9 @@ def create_pdf(task_description, response_text, file_name, task_type):
     pdf.output(file_name)
 
 # 3. Memo PDF Creation Function (calls create_memo)
+from fpdf import FPDF
+import datetime
+
 def create_memo_pdf(answer_key, memo_file_name, task_type):
     """Generate a memo PDF containing only the answer key."""
     pdf = FPDF()
@@ -147,9 +150,9 @@ def create_memo_pdf(answer_key, memo_file_name, task_type):
     pdf.set_xy(10, 40)
 
     if answer_key.strip():
-	pdf.multi_cell(0, 10, txt=f"Answer Key:\n{answer_key}")
+        pdf.multi_cell(0, 10, txt=f"Answer Key:\n{answer_key}")
     else:
-	pdf.multi_cell(0, 10, txt="No answer key found.")
+        pdf.multi_cell(0, 10, txt="No answer key found.")
 
     pdf.output(memo_file_name)
 
