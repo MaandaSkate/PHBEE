@@ -70,28 +70,31 @@ def img_to_base64(image_path):
         return ""
 
 def extract_answer_key(response_text):
-    """Extracts the answer key from the response text and returns it separately."""
+    """Extracts the answer key from the response text and ensures answers are captured."""
     lines = response_text.split("\n")
     main_text = []
     answer_key = []
-
+    
     is_answer_key = False
     for line in lines:
-        if "Answer Key" in line:  # Detect where the answer key starts
+        # Detect the start of the Answer Key section
+        if "Answer Key" in line or "Correct Answers" in line or "Answers:" in line:
             is_answer_key = True
-            continue
+            continue  # Skip the header line
+
         if is_answer_key:
             answer_key.append(line.strip())  # Store answer key separately
         else:
             main_text.append(line.strip())  # Store main task response
 
+        # Detect inline answers like "Q1: ... Answer: ..."
+        if "Answer:" in line or "Correct Answer:" in line or "Q" in line and "A:" in line:
+            answer_key.append(line.strip())
+
+    if not answer_key:
+        answer_key.append("No explicit answers detected, please review the generated content.")
+
     return "\n".join(main_text), "\n".join(answer_key)
-
-
-
-# 1. Memo Creation Function (must be defined first)
-
-
 
 def create_memo_pdf(answer_key, memo_file_name, task_type):
     """Generate a memo PDF containing the extracted answer key or a fallback message."""
@@ -107,12 +110,10 @@ def create_memo_pdf(answer_key, memo_file_name, task_type):
 
     pdf.set_xy(10, 40)
 
-    if answer_key.strip():
-        pdf.multi_cell(0, 10, txt=f"**Answer Key:**\n{answer_key}")
-    else:
-        pdf.multi_cell(0, 10, txt="No answers found in the response.")
+    pdf.multi_cell(0, 10, txt=f"**Answer Key:**\n{answer_key}" if answer_key.strip() else "No answers found.")
 
     pdf.output(memo_file_name)
+
 
 
 
