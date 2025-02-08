@@ -69,39 +69,32 @@ def img_to_base64(image_path):
         st.error(f"An unexpected error occurred: {str(e)}")
         return ""
 
+import re
+
 def extract_answer_key(response_text):
-    """Extracts the answer key from the response text and ensures answers are captured."""
+    """Extracts only the correct answers from the generated response."""
     lines = response_text.split("\n")
     answer_key = []
-    
-    is_answer_key = False
+
     for line in lines:
-        # Detect explicit "Answer Key" section
-        if "Answer Key" in line or "Correct Answers" in line or "Answers:" in line:
-            is_answer_key = True
-            continue
+        # Identify correct answers using patterns like "Correct Answer: (b)" or "Answer: x = 5"
+        match = re.search(r"Correct Answer:\s*(.*)|Answer:\s*(.*)", line, re.IGNORECASE)
+        if match:
+            correct_answer = match.group(1) or match.group(2)
+            answer_key.append(correct_answer.strip())
 
-        if is_answer_key:
-            answer_key.append(line.strip())  # Store answer key separately
-        else:
-            # Detect inline answers like "Q1: ... Answer: ..."
-            if "Answer:" in line or "Correct Answer:" in line or "Q" in line and "A:" in line:
-                answer_key.append(line.strip())
-
-    # If no answers are found, add a fallback message
-    if not answer_key:
-        answer_key.append("No explicit answers detected, please review the generated content.")
-
-    return "\n".join(answer_key)
+    return "\n".join(answer_key) if answer_key else "No answers detected."
 
 
 
-def create_memo_pdf(response_text, memo_file_name):
-    """Generate a separate PDF for the memo."""
+
+
+def create_memo_pdf(answer_key, memo_file_name):
+    """Generate a memo PDF containing only the extracted answer key."""
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Memo", ln=True, align='C')
+    pdf.cell(200, 10, txt="Memo - Answer Key", ln=True, align='C')
     pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
     pdf.ln(10)
 
@@ -109,7 +102,7 @@ def create_memo_pdf(response_text, memo_file_name):
     pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
 
     pdf.set_xy(10, 40)
-    pdf.multi_cell(0, 10, txt="Memo:\n" + response_text)
+    pdf.multi_cell(0, 10, txt=f"**Answer Key:**\n{answer_key}" if answer_key.strip() else "No answers found.")
 
     pdf.output(memo_file_name)
 
@@ -251,7 +244,6 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
         )
 
 
-
 def task_generator():
     st.subheader("Generate Educational Tasks")
 
@@ -285,11 +277,18 @@ def task_generator():
                 task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
                 response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
+                # Extract only the answers for the memo
+                answer_key = extract_answer_key(response_text)
+
                 # Show the response text to the user
                 st.subheader("Generated Task Description and Response")
                 st.write(f"**Task Type:** {task_type}")
                 st.write(f"**Task Description:** {task_description}")
                 st.write(f"**Response from Intent Detection:** {response_text}")
+
+                # Display extracted answer key in Streamlit
+                st.subheader("Answer Key")
+                st.write(answer_key)
 
                 # Generate file names
                 timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -299,7 +298,7 @@ def task_generator():
 
                 # Create the PDFs
                 create_pdf(task_description, response_text, file_name, task_type)
-                create_memo_pdf(response_text, memo_file_name)  # ✅ FIXED: Using response_text directly
+                create_memo_pdf(answer_key, memo_file_name)  # ✅ Now uses only extracted answers
 
                 st.success("Task and Memo generated successfully!")
                 st.balloons()
