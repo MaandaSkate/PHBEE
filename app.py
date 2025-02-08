@@ -69,28 +69,37 @@ def img_to_base64(image_path):
         st.error(f"An unexpected error occurred: {str(e)}")
         return ""
 
+import re
+
 def extract_answer_key(response_text):
-    """Extracts the answer key from the response text and returns it separately."""
+    """Extracts only the correct answers from the generated response."""
     lines = response_text.split("\n")
-    main_text = []
     answer_key = []
 
     is_answer_key = False
     for line in lines:
-        if "Answer Key" in line:  # Detect where the answer key starts
+        # Detect explicit "Answer Key" section
+        if "Answer Key" in line or "Correct Answers" in line or "Answers:" in line:
             is_answer_key = True
             continue
+
         if is_answer_key:
             answer_key.append(line.strip())  # Store answer key separately
         else:
-            main_text.append(line.strip())  # Store main task response
+            # Detect inline answers like "Q1: ... Answer: ..."
+            match = re.search(r"Answer:\s*(.*)", line, re.IGNORECASE)
+            if match:
+                correct_answer = match.group(1).strip()
+                answer_key.append(correct_answer)
 
-    return "\n".join(main_text), "\n".join(answer_key)
+    return "\n".join(answer_key) if answer_key else "No answers detected."
+
 
 
 
 
 # 1. Memo Creation Function (must be defined first)
+
 def create_memo(response_text):
     """Generate a memo text with answers from the response."""
     memo = "Memo:\n\n"
@@ -104,6 +113,26 @@ def create_memo(response_text):
         memo += "No answers provided in response.\n"
 
     return memo
+
+def create_memo_pdf(response_text, memo_file_name, task_type):
+    """Generate a memo PDF containing only the answer key."""
+    memo_text = create_memo(response_text)  # Extract only answers
+    
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"{task_type.capitalize()} Memo", ln=True, align='C')
+    pdf.cell(200, 10, txt=datetime.datetime.now().strftime("%Y-%m-%d"), ln=True, align='C')
+    pdf.ln(10)
+
+    pdf.set_fill_color(200, 220, 255)
+    pdf.rect(x=10, y=30, w=190, h=pdf.get_y() + 10, style='F')
+
+    pdf.set_xy(10, 40)
+    pdf.multi_cell(0, 10, txt=memo_text)
+
+    pdf.output(memo_file_name)
+
 
 # 2. PDF Creation Function (uses create_memo)
 def create_pdf(task_description, response_text, file_name, task_type):
@@ -256,20 +285,19 @@ def generate_task_description(task_type, subject, grade, curriculum, num_questio
             f"{curriculum} curriculum. The task should include {num_questions_or_term} questions, each with 4 options, "
             f"and the total marks should sum up to {total_marks_or_week}."
         )
+
+
 def task_generator():
     st.subheader("Generate Educational Tasks")
 
-    # Ensure session_id is initialized
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = generate_session_id()
 
-    # Task type input
     task_type = st.selectbox("Select Task Type", ["Assessment", "Project", "Test", "Lesson Plan", "Exam"])
     subject = st.text_input("Subject")
     grade = st.selectbox("Grade", ["R", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])
     curriculum = st.radio("Curriculum", ["CAPS", "IEB"])
 
-    # Conditional inputs based on task type
     if task_type == "Lesson Plan":
         term = st.slider("Term", 1, 4)
         week = st.slider("Week", 1, 10)
@@ -281,79 +309,44 @@ def task_generator():
         num_questions_or_term = num_questions
         total_marks_or_week = total_marks
 
-    # Generate task button
     if st.button("Generate Task"):
         try:
             with st.spinner('Generating task, please wait...'):
                 task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
                 response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
 
-                # Extract and separate the answer key
-                filtered_response, answer_key = extract_answer_key(response_text)
+                # Extract answers separately
+                answer_key = extract_answer_key(response_text)
 
-                # Show the response text to the user
                 st.subheader("Generated Task Description and Response")
                 st.write(f"**Task Type:** {task_type}")
                 st.write(f"**Task Description:** {task_description}")
-                st.write(f"**Response from Intent Detection:** {filtered_response}")
+                st.write(f"**Response from Intent Detection:** {response_text}")
 
-                # Display extracted answer key in Streamlit
-                if answer_key.strip():
-                    st.subheader("Answer Key")
-                    st.write(answer_key)
-                else:
-                    st.write("No answers detected in the response.")
+                st.subheader("Answer Key")
+                st.write(answer_key)
 
-                # Create the Task PDF
-                file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                create_pdf(task_description, filtered_response, file_name, task_type)
+                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                file_name = f"{task_type.replace(' ', '_')}_{timestamp}.pdf"
+                memo_file_name = f"Memo_{task_type.replace(' ', '_')}_{timestamp}.pdf"
 
-                # Create the Memo PDF (Answer Key)
-                memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                create_memo_pdf(answer_key, memo_file_name, task_type)
+                create_pdf(task_description, response_text, file_name, task_type)
+                create_memo_pdf(response_text, memo_file_name, task_type)  # ✅ Now extracts answers correctly
 
                 st.success("Task and Memo generated successfully!")
-                st.balloons()
 
-                # Read the PDF files into memory for download
                 with open(file_name, "rb") as task_pdf:
                     task_pdf_data = task_pdf.read()
 
                 with open(memo_file_name, "rb") as memo_pdf:
                     memo_pdf_data = memo_pdf.read()
 
-                # Individual download buttons
-                st.download_button(
-                    label="📄 Download Task PDF",
-                    data=task_pdf_data,
-                    file_name=file_name,
-                    mime='application/pdf'
-                )
-                st.download_button(
-                    label="📄 Download Memo PDF",
-                    data=memo_pdf_data,
-                    file_name=memo_file_name,
-                    mime='application/pdf'
-                )
-
-                # Combined download button (ZIP both PDFs)
-                zip_filename = f"{task_type.replace(' ', '_')}_Task_and_Memo.zip"
-                zip_buffer = io.BytesIO()
-                with zipfile.ZipFile(zip_buffer, "w") as zip_file:
-                    zip_file.writestr(file_name, task_pdf_data)
-                    zip_file.writestr(memo_file_name, memo_pdf_data)
-
-                zip_buffer.seek(0)
-
-                st.download_button(
-                    label="📁 Download Both PDFs (Task + Memo)",
-                    data=zip_buffer,
-                    file_name=zip_filename,
-                    mime="application/zip"
-                )
+                st.download_button("📄 Download Task PDF", data=task_pdf_data, file_name=file_name, mime='application/pdf')
+                st.download_button("📄 Download Memo PDF", data=memo_pdf_data, file_name=memo_file_name, mime='application/pdf')
 
         except Exception as e:
             st.error(f"An error occurred: {e}")
+
 
 
 
