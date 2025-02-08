@@ -86,11 +86,8 @@ def extract_answer_key(response_text):
     return "\n".join(answer_key)
 
 
-
-def create_memo_pdf(response_text, memo_file_name):
+def create_memo_pdf(answer_key, memo_file_name):
     """Generate a memo PDF containing the extracted answer key."""
-    answer_key = extract_answer_key(response_text)  # Ensure we extract answers properly
-
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
