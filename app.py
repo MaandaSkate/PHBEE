@@ -75,15 +75,16 @@ def extract_answer_key(response_text):
 
     is_answer_key = False
     for line in lines:
-	if "Answer Key" in line:  # Detect where the answer key starts
-	    is_answer_key = True
-	    continue
-	if is_answer_key:
-	    answer_key.append(line.strip())  # Store answer key separately
-	else:
-	    main_text.append(line.strip())  # Store main task response
+        if "Answer Key" in line:  # Detect where the answer key starts
+            is_answer_key = True
+            continue
+        if is_answer_key:
+            answer_key.append(line.strip())  # Store answer key separately
+        else:
+            main_text.append(line.strip())  # Store main task response
 
     return "\n".join(main_text), "\n".join(answer_key)
+
 
 
 # 1. Memo Creation Function (must be defined first)
