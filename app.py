@@ -307,54 +307,54 @@ def task_generator():
         total_marks_or_week = total_marks
 
     # Generate task button
-    if st.button("Generate Task"):
-    try:
-        with st.spinner('Generating task, please wait...'):
-            task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
-            response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
-
-            # Extract only the answers for the memo
-            answer_key = extract_answer_key(response_text)
-
-            st.subheader("Generated Task Description and Response")
-            st.write(f"**Task Type:** {task_type}")
-            st.write(f"**Task Description:** {task_description}")
-            st.write(f"**Response from Intent Detection:** {response_text}")
-
-            st.subheader("Answer Key")
-            st.write(answer_key)
-
-            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-            file_name = f"{task_type.replace(' ', '_')}_{timestamp}.pdf"
-            memo_file_name = f"Memo_{task_type.replace(' ', '_')}_{timestamp}.pdf"
-            zip_file_name = f"{task_type.replace(' ', '_')}_Task_and_Memo_{timestamp}.zip"
-
-            create_pdf(task_description, response_text, file_name, task_type)
-            create_memo_pdf(answer_key, memo_file_name, task_type)  # ✅ Now extracts answers correctly
-
-            st.success("Task and Memo generated successfully!")
-            st.balloons()
-
-            with open(file_name, "rb") as task_pdf:
-                task_pdf_data = task_pdf.read()
-
-            with open(memo_file_name, "rb") as memo_pdf:
-                memo_pdf_data = memo_pdf.read()
-
-            st.download_button("📄 Download Task PDF", data=task_pdf_data, file_name=file_name, mime='application/pdf')
-            st.download_button("📄 Download Memo PDF", data=memo_pdf_data, file_name=memo_file_name, mime='application/pdf')
-
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, "w") as zip_file:
-                zip_file.writestr(file_name, task_pdf_data)
-                zip_file.writestr(memo_file_name, memo_pdf_data)
-
-            zip_buffer.seek(0)
-
-            st.download_button("📁 Download Both PDFs (Task + Memo)", data=zip_buffer, file_name=zip_file_name, mime="application/zip")
-
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
+        if st.button("Generate Task"):
+        try:
+            with st.spinner('Generating task, please wait...'):
+                task_description = generate_task_description(task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week)
+                response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
+    
+                # Extract only the answers for the memo
+                answer_key = extract_answer_key(response_text)
+    
+                st.subheader("Generated Task Description and Response")
+                st.write(f"**Task Type:** {task_type}")
+                st.write(f"**Task Description:** {task_description}")
+                st.write(f"**Response from Intent Detection:** {response_text}")
+    
+                st.subheader("Answer Key")
+                st.write(answer_key)
+    
+                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                file_name = f"{task_type.replace(' ', '_')}_{timestamp}.pdf"
+                memo_file_name = f"Memo_{task_type.replace(' ', '_')}_{timestamp}.pdf"
+                zip_file_name = f"{task_type.replace(' ', '_')}_Task_and_Memo_{timestamp}.zip"
+    
+                create_pdf(task_description, response_text, file_name, task_type)
+                create_memo_pdf(answer_key, memo_file_name, task_type)  # ✅ Now extracts answers correctly
+    
+                st.success("Task and Memo generated successfully!")
+                st.balloons()
+    
+                with open(file_name, "rb") as task_pdf:
+                    task_pdf_data = task_pdf.read()
+    
+                with open(memo_file_name, "rb") as memo_pdf:
+                    memo_pdf_data = memo_pdf.read()
+    
+                st.download_button("📄 Download Task PDF", data=task_pdf_data, file_name=file_name, mime='application/pdf')
+                st.download_button("📄 Download Memo PDF", data=memo_pdf_data, file_name=memo_file_name, mime='application/pdf')
+    
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+                    zip_file.writestr(file_name, task_pdf_data)
+                    zip_file.writestr(memo_file_name, memo_pdf_data)
+    
+                zip_buffer.seek(0)
+    
+                st.download_button("📁 Download Both PDFs (Task + Memo)", data=zip_buffer, file_name=zip_file_name, mime="application/zip")
+    
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
 
 
 
