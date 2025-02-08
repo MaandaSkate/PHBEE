@@ -61,7 +61,6 @@ def img_to_base64(image_path):
     except Exception as e:
         st.error(f"An unexpected error occurred: {str(e)}")
         return base64.b64encode(b'').decode('utf-8')
-
 def extract_questions_and_answers(response_text):
     """
     Extracts questions, answers, and steps to the answer.
@@ -78,26 +77,28 @@ def extract_questions_and_answers(response_text):
     for line in lines:
         stripped_line = line.strip()
 
-        if "Answer Key" in stripped_line:
+        if "Answer Key:" in stripped_line:
             is_answer_section = True
-            continue  # Skip the "Answer Key" title
-
-        if "Steps to Answer" in stripped_line:
-            is_steps_section = True
-            continue  # Skip the "Steps to Answer" title
-
-        if is_answer_section or is_steps_section:
-            current_answer.append(stripped_line)  # Collect answers and steps
-        else:
-            current_question.append(stripped_line)  # Collect questions
-
-        if stripped_line == "":
+            is_steps_section = False
             if current_question:
                 questions.append("\n".join(current_question).strip())
                 current_question = []
-            if current_answer:
-                answers_with_steps.append("\n".join(current_answer).strip())
-                current_answer = []
+            continue  # Skip the "Answer Key" title itself
+
+        if "Steps to Answer:" in stripped_line:
+            is_steps_section = True
+            continue  # Skip the "Steps to Answer" title itself
+
+        if is_answer_section or is_steps_section:
+            current_answer.append(stripped_line)  # Store answers and steps
+        else:
+            current_question.append(stripped_line)  # Store questions
+
+    if current_question:
+        questions.append("\n".join(current_question).strip())
+
+    if current_answer:
+        answers_with_steps.append("\n".join(current_answer).strip())
 
     formatted_questions = "\n\n".join(questions)
     formatted_answers_with_steps = "\n\n".join(answers_with_steps)
@@ -121,9 +122,6 @@ def create_pdf(task_description, formatted_questions, file_name, task_type):
 
     pdf.output(file_name)
 
-
-
-# 1. Memo Creation Function (must be defined first)
 def create_memo_pdf(answers_with_steps, memo_file_name, task_type):
     """Generates the memo PDF with answers and steps."""
     pdf = FPDF()
@@ -144,6 +142,8 @@ def create_memo_pdf(answers_with_steps, memo_file_name, task_type):
         pdf.multi_cell(0, 10, txt="No answers or steps provided.")
 
     pdf.output(memo_file_name)
+
+
 
 
 
@@ -311,7 +311,7 @@ def task_generator():
                 st.write(f"**Task Description:** {task_description}")
                 st.write(f"**Full Questions:**\n\n{formatted_questions}")
 
-                # Create the PDFs
+                # Create PDFs
                 file_name = f"{task_type.replace(' ', '_')}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 memo_file_name = f"{task_type.replace(' ', '_')}_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
 
@@ -321,33 +321,19 @@ def task_generator():
                 st.success("Task and Memo generated successfully!")
                 st.balloons()
 
-                # Read the PDF files into memory for download
+                # Provide download buttons
                 with open(file_name, "rb") as task_pdf:
                     task_pdf_data = task_pdf.read()
 
                 with open(memo_file_name, "rb") as memo_pdf:
                     memo_pdf_data = memo_pdf.read()
 
-                # Individual download buttons
                 st.download_button(label="Download Task PDF", data=task_pdf_data, file_name=file_name, mime='application/pdf')
                 st.download_button(label="Download Memo PDF", data=memo_pdf_data, file_name=memo_file_name, mime='application/pdf')
 
-                # Combined download button (ZIP both PDFs)
-                zip_filename = f"{task_type.replace(' ', '_')}_Task_and_Memo.zip"
-                import zipfile
-                import io
-
-                zip_buffer = io.BytesIO()
-                with zipfile.ZipFile(zip_buffer, "w") as zip_file:
-                    zip_file.writestr(file_name, task_pdf_data)
-                    zip_file.writestr(memo_file_name, memo_pdf_data)
-
-                zip_buffer.seek(0)
-
-                st.download_button(label="Download Both PDFs (Task + Memo)", data=zip_buffer, file_name=zip_filename, mime="application/zip")
-
         except Exception as e:
             st.error(f"An error occurred: {e}")
+
 
 
  
