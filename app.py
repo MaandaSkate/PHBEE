@@ -163,15 +163,16 @@ def create_memo_pdf(answer_key, memo_file_name, task_type):
 
 def detect_intent_text(client, project_id, agent_id, session_id, text, language_code="en"):
     try:
-	session_path = f"projects/{project_id}/locations/global/agents/{agent_id}/sessions/{session_id}"
-	text_input = dialogflow_cx.TextInput(text=text)
-	query_input = dialogflow_cx.QueryInput(text=text_input, language_code=language_code)
-	request = dialogflow_cx.DetectIntentRequest(session=session_path, query_input=query_input)
-	response = client.detect_intent(request=request)
-	return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
+        session_path = f"projects/{project_id}/locations/global/agents/{agent_id}/sessions/{session_id}"
+        text_input = dialogflow_cx.TextInput(text=text)
+        query_input = dialogflow_cx.QueryInput(text=text_input, language_code=language_code)
+        request = dialogflow_cx.DetectIntentRequest(session=session_path, query_input=query_input)
+        response = client.detect_intent(request=request)
+        return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
     except Exception as e:
-	st.error(f"Error detecting intent: {e}")
-	return "An error occurred while processing your request."
+        st.error(f"Error detecting intent: {e}")
+        return "An error occurred while processing your request."
+
 
 def display_message(sender, message):
     if sender == "user":
