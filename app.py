@@ -62,6 +62,10 @@ def img_to_base64(image_path):
         st.error(f"An unexpected error occurred: {str(e)}")
         return base64.b64encode(b'').decode('utf-8')
 
+
+
+
+
 def extract_questions_answers(response_text):
     """
     Extracts full questions and their answers.
@@ -71,7 +75,6 @@ def extract_questions_answers(response_text):
     questions = []
     answers = []
     current_question = []
-    current_answer = []
     is_answer_section = False
 
     for line in lines:
@@ -82,23 +85,21 @@ def extract_questions_answers(response_text):
             if current_question:
                 questions.append("\n".join(current_question).strip())
                 current_question = []
-            continue  # Skip the "Answer Key" title itself
+            continue  # Skip "Answer Key" title itself
 
         if is_answer_section:
-            current_answer.append(stripped_line)  # Store only answers
+            answers.append(stripped_line)  # Store only answers
         else:
             current_question.append(stripped_line)  # Store only questions
 
     if current_question:
         questions.append("\n".join(current_question).strip())
 
-    if current_answer:
-        answers.append("\n".join(current_answer).strip())
-
     formatted_questions = "\n\n".join(questions)
     formatted_answers = "\n\n".join(answers)
 
     return formatted_questions, formatted_answers
+
 
 
 def create_memo(response_text):
