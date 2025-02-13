@@ -371,8 +371,6 @@ def task_generator():
             st.error(f"An error occurred: {e}")
 
 
-
-
 def free_task():
     st.subheader("Free Task")
     st.markdown("Generate a custom PDF based on your request.")
@@ -395,6 +393,10 @@ def free_task():
 
                     st.success("Task PDF generated successfully!")
 
+                    # Display the generated response on screen
+                    st.subheader("Generated Response")
+                    st.write(response_text)
+
                     # Read the PDF file into memory for download
                     with open(pdf_file_name, "rb") as task_pdf:
                         task_pdf_data = task_pdf.read()
@@ -406,6 +408,8 @@ def free_task():
                     st.error(f"An error occurred: {e}")
         else:
             st.error("Please enter a valid request.")
+
+
 
 
 
