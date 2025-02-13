@@ -370,44 +370,9 @@ def task_generator():
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
-def extract_questions_answers(response_text):
-    """
-    Extracts full questions and their answers.
-    Returns: (formatted_questions, formatted_answers)
-    """
-    lines = response_text.split("\n")
-    questions = []
-    answers = []
-    current_question = []
-    is_answer_section = False
-
-    for line in lines:
-        stripped_line = line.strip()
-
-        if "Answer Key:" in stripped_line:  # Detect where answers start
-            is_answer_section = True
-            if current_question:
-                questions.append("\n".join(current_question).strip())
-                current_question = []
-            continue  # Skip "Answer Key" title itself
-
-        if is_answer_section:
-            answers.append(stripped_line)  # Store only answers
-        else:
-            current_question.append(stripped_line)  # Store only questions
-
-    if current_question:
-        questions.append("\n".join(current_question).strip())
-
-    formatted_questions = "\n\n".join(questions)
-    formatted_answers = "\n\n".join(answers)
-
-    return formatted_questions, formatted_answers
 
 
 
-
-# Free Task logic with fixes
 def free_task():
     st.subheader("Free Task")
     st.markdown("Generate a custom PDF based on your request.")
@@ -417,51 +382,31 @@ def free_task():
         st.session_state['session_id'] = generate_session_id()
 
     request_text = st.text_area("Enter your request")
-    
+
     if st.button("Generate Free Task"):
         if request_text.strip():
             with st.spinner("Generating..."):
                 try:
                     response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], request_text)
 
-                    # Extract questions and answers for PDF
-                    formatted_questions, formatted_answers = extract_questions_answers(response_text)  # ✅ Now defined
-
-                    # Generate PDFs
+                    # Generate the Task PDF only
                     pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                    memo_file_name = f"Free_Task_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-
                     create_pdf(request_text, response_text, pdf_file_name, "Free Task")
-                    create_memo_pdf(response_text, memo_file_name, "Free Task")
 
-                    st.success("Task and Memo generated successfully!")
+                    st.success("Task PDF generated successfully!")
 
-                    # Read PDFs into memory for download
+                    # Read the PDF file into memory for download
                     with open(pdf_file_name, "rb") as task_pdf:
                         task_pdf_data = task_pdf.read()
 
-                    with open(memo_file_name, "rb") as memo_pdf:
-                        memo_pdf_data = memo_pdf.read()
-
-                    # Provide download buttons
+                    # Provide download button
                     st.download_button("Download Task PDF", data=task_pdf_data, file_name=pdf_file_name, mime='application/pdf')
-                    st.download_button("Download Memo PDF", data=memo_pdf_data, file_name=memo_file_name, mime='application/pdf')
-
-                    # Create a ZIP file with both PDFs
-                    zip_filename = f"Free_Task_and_Memo.zip"
-                    zip_buffer = io.BytesIO()
-                    with zipfile.ZipFile(zip_buffer, "w") as zip_file:
-                        zip_file.writestr(pdf_file_name, task_pdf_data)
-                        zip_file.writestr(memo_file_name, memo_pdf_data)
-
-                    zip_buffer.seek(0)
-
-                    st.download_button("Download Both PDFs (Task + Memo)", data=zip_buffer, file_name=zip_filename, mime="application/zip")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
         else:
             st.error("Please enter a valid request.")
+
 
 
 # All Classwork logic
