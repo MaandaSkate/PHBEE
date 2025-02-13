@@ -374,46 +374,64 @@ def task_generator():
 
 
 
- 
 
 
-
-
-# Free Task logic
+# Free Task logic with fixes
 def free_task():
     st.subheader("Free Task")
     st.markdown("Generate a custom PDF based on your request.")
 
+    # Ensure session_id is initialized before use
+    if 'session_id' not in st.session_state:
+        st.session_state['session_id'] = generate_session_id()
+
     request_text = st.text_area("Enter your request")
+    
     if st.button("Generate Free Task"):
         if request_text.strip():
             with st.spinner("Generating..."):
-                response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], request_text)
-                
-                pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                create_pdf(request_text, response_text, pdf_file_name, "Free Task")
+                try:
+                    response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], request_text)
 
-                memo_file_name = f"Free_Task_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                create_memo_pdf(response_text, memo_file_name, "Free Task")
+                    # Extract questions and answers for PDF
+                    formatted_questions, formatted_answers = extract_questions_answers(response_text)
 
-                st.markdown(f"**Generated PDF:** {request_text}")
-                st.markdown(f"**Response:** {response_text}")
+                    # Generate PDFs
+                    pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                    memo_file_name = f"Free_Task_Memo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
 
-                # Provide download buttons
-                st.download_button(
-                    label="Download Task PDF",
-                    data=open(pdf_file_name, "rb").read(),
-                    file_name=pdf_file_name,
-                    mime='application/pdf'
-                )
-                st.download_button(
-                    label="Download Memo PDF",
-                    data=open(memo_file_name, "rb").read(),
-                    file_name=memo_file_name,
-                    mime='application/pdf'
-                )
+                    create_pdf(request_text, response_text, pdf_file_name, "Free Task")
+                    create_memo_pdf(response_text, memo_file_name, "Free Task")
+
+                    st.success("Task and Memo generated successfully!")
+
+                    # Read PDFs into memory for download
+                    with open(pdf_file_name, "rb") as task_pdf:
+                        task_pdf_data = task_pdf.read()
+
+                    with open(memo_file_name, "rb") as memo_pdf:
+                        memo_pdf_data = memo_pdf.read()
+
+                    # Provide download buttons
+                    st.download_button("Download Task PDF", data=task_pdf_data, file_name=pdf_file_name, mime='application/pdf')
+                    st.download_button("Download Memo PDF", data=memo_pdf_data, file_name=memo_file_name, mime='application/pdf')
+
+                    # Create a ZIP file with both PDFs
+                    zip_filename = f"Free_Task_and_Memo.zip"
+                    zip_buffer = io.BytesIO()
+                    with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+                        zip_file.writestr(pdf_file_name, task_pdf_data)
+                        zip_file.writestr(memo_file_name, memo_pdf_data)
+
+                    zip_buffer.seek(0)
+
+                    st.download_button("Download Both PDFs (Task + Memo)", data=zip_buffer, file_name=zip_filename, mime="application/zip")
+
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
         else:
             st.error("Please enter a valid request.")
+
 
 # All Classwork logic
 def all_classwork():
