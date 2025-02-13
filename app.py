@@ -370,8 +370,39 @@ def task_generator():
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
+def extract_questions_answers(response_text):
+    """
+    Extracts full questions and their answers.
+    Returns: (formatted_questions, formatted_answers)
+    """
+    lines = response_text.split("\n")
+    questions = []
+    answers = []
+    current_question = []
+    is_answer_section = False
 
+    for line in lines:
+        stripped_line = line.strip()
 
+        if "Answer Key:" in stripped_line:  # Detect where answers start
+            is_answer_section = True
+            if current_question:
+                questions.append("\n".join(current_question).strip())
+                current_question = []
+            continue  # Skip "Answer Key" title itself
+
+        if is_answer_section:
+            answers.append(stripped_line)  # Store only answers
+        else:
+            current_question.append(stripped_line)  # Store only questions
+
+    if current_question:
+        questions.append("\n".join(current_question).strip())
+
+    formatted_questions = "\n\n".join(questions)
+    formatted_answers = "\n\n".join(answers)
+
+    return formatted_questions, formatted_answers
 
 
 
@@ -394,7 +425,7 @@ def free_task():
                     response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], request_text)
 
                     # Extract questions and answers for PDF
-                    formatted_questions, formatted_answers = extract_questions_answers(response_text)
+                    formatted_questions, formatted_answers = extract_questions_answers(response_text)  # ✅ Now defined
 
                     # Generate PDFs
                     pdf_file_name = f"Free_Task_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
