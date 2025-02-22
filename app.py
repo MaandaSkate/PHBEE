@@ -161,46 +161,35 @@ def create_pdf(task_description, response_text, file_name, task_type):
 
 
 def generate_variation(prompt):
-    """Generate slight variations of the prompt for diverse responses."""
+    """Generate variations of the task description only if it's a regeneration."""
     variations = [
-        f"{prompt} Provide a unique version of this.",
-        f"Generate a different take on: {prompt}",
-        f"Reword and restructure this task while keeping its core meaning: {prompt}",
-        f"Come up with a fresh response while keeping the key points of: {prompt}",
-        f"Provide an alternative explanation or format for: {prompt}"
+        f"{prompt} Change the structure of the questions but keep the same topic.",
+        f"{prompt} Provide a fresh set of questions while keeping the topic the same.",
+        f"{prompt} Generate alternative questions but do not change the topic.",
+        f"{prompt} Reword and restructure the questions while keeping the learning goal unchanged."
     ]
     return random.choice(variations)
 
-def detect_intent_text(client, project_id, agent_id, session_id, text, language_code="en"):
-    """Send a varied query to Dialogflow and ensure unique responses."""
+def detect_intent_text(client, project_id, agent_id, session_id, text, regenerate=False, language_code="en"):
+    """
+    Get a response from Dialogflow.
+    If regenerate=True, it modifies the questions while keeping the topic the same.
+    """
     try:
-        varied_text = generate_variation(text)  # Introduce variation before sending
+        if regenerate:
+            text = generate_variation(text)  # Modify only if regenerating
+
         session_path = f"projects/{project_id}/locations/global/agents/{agent_id}/sessions/{session_id}"
-        text_input = dialogflow_cx.TextInput(text=varied_text)
+        text_input = dialogflow_cx.TextInput(text=text)
         query_input = dialogflow_cx.QueryInput(text=text_input, language_code=language_code)
         request = dialogflow_cx.DetectIntentRequest(session=session_path, query_input=query_input)
         response = client.detect_intent(request=request)
 
-        response_text = response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
-
-        # Store past responses in session_state to avoid duplicates
-        if "past_responses" not in st.session_state:
-            st.session_state.past_responses = set()
-
-        while response_text in st.session_state.past_responses:  # Regenerate if duplicate
-            varied_text = generate_variation(text)
-            request = dialogflow_cx.DetectIntentRequest(session=session_path, query_input=query_input)
-            response = client.detect_intent(request=request)
-            response_text = response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
-
-        st.session_state.past_responses.add(response_text)  # Store the response for future checks
-
-        return response_text
+        return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
 
     except Exception as e:
         st.error(f"Error detecting intent: {e}")
         return "An error occurred while processing your request."
-
 
 
 
