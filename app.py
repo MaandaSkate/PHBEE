@@ -14,7 +14,6 @@ from email.mime.multipart import MIMEMultipart
 import uuid
 import zipfile
 import io
-import random
 # Set the page configuration
 st.set_page_config(page_title="PHBEE", page_icon="📚", layout="centered")
 
@@ -160,38 +159,22 @@ def create_pdf(task_description, response_text, file_name, task_type):
 
 
 
-def generate_variation(prompt):
-    """Generate variations of the task description only if it's a regeneration."""
-    variations = [
-        f"{prompt} Change the structure of the questions but keep the same topic.",
-        f"{prompt} Provide a fresh set of questions while keeping the topic the same.",
-        f"{prompt} Generate alternative questions but do not change the topic.",
-        f"{prompt} Reword and restructure the questions while keeping the learning goal unchanged."
-    ]
-    return random.choice(variations)
 
-def detect_intent_text(client, project_id, agent_id, session_id, text, regenerate=False, language_code="en"):
-    """
-    Get a response from Dialogflow.
-    If regenerate=True, it modifies the questions while keeping the topic the same.
-    """
+
+
+
+
+def detect_intent_text(client, project_id, agent_id, session_id, text, language_code="en"):
     try:
-        if regenerate:
-            text = generate_variation(text)  # Modify only if regenerating
-
         session_path = f"projects/{project_id}/locations/global/agents/{agent_id}/sessions/{session_id}"
         text_input = dialogflow_cx.TextInput(text=text)
         query_input = dialogflow_cx.QueryInput(text=text_input, language_code=language_code)
         request = dialogflow_cx.DetectIntentRequest(session=session_path, query_input=query_input)
         response = client.detect_intent(request=request)
-
         return response.query_result.response_messages[0].text.text[0] if response.query_result.response_messages else "No response from Dialogflow."
-
     except Exception as e:
         st.error(f"Error detecting intent: {e}")
         return "An error occurred while processing your request."
-
-
 
 def display_message(sender, message):
     if sender == "user":
@@ -325,10 +308,6 @@ def task_generator():
         num_questions_or_term = num_questions
         total_marks_or_week = total_marks
 
-    # Store first-time task generation state
-    if 'generated_task' not in st.session_state:
-        st.session_state.generated_task = None
-
     # Generate task button
     if st.button("Generate Task"):
         try:
@@ -336,39 +315,57 @@ def task_generator():
                 task_description = generate_task_description(
                     task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week
                 )
-                
-                # Generate response normally the first time
-                response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description)
-                
-                # Store the response for future regenerations
-                st.session_state.generated_task = response_text
-
-                # Display task
-                st.subheader("Generated Task")
-                st.write(f"**Task Description:** {task_description}")
-                st.write(response_text)
-
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
-
-    # Regenerate Task Button
-    if st.session_state.generated_task and st.button("Regenerate Task"):
-        try:
-            with st.spinner('Generating new variation...'):
-                task_description = generate_task_description(
-                    task_type, subject, grade, curriculum, num_questions_or_term, total_marks_or_week
+                response_text = detect_intent_text(
+                    client, project_id, agent_id, st.session_state['session_id'], task_description
                 )
 
-                # This time, modify the questions while keeping the topic
-                new_response_text = detect_intent_text(client, project_id, agent_id, st.session_state['session_id'], task_description, regenerate=True)
+                # Extract only the answers for the memo
+                answer_key = extract_answer_key(response_text)
 
-                # Update stored response
-                st.session_state.generated_task = new_response_text
-
-                # Display task
-                st.subheader("Regenerated Task")
+                # Display task details
+                st.subheader("Generated Task Description and Response")
+                st.write(f"**Task Type:** {task_type}")
                 st.write(f"**Task Description:** {task_description}")
-                st.write(new_response_text)
+                st.write(f"**Response from Intent Detection:** {response_text}")
+
+                # Display extracted answer key
+                st.subheader("Answer Key")
+                st.write(answer_key)
+
+                # Create filenames
+                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                file_name = f"{task_type.replace(' ', '_')}_{timestamp}.pdf"
+                memo_file_name = f"Memo_{task_type.replace(' ', '_')}_{timestamp}.pdf"
+                zip_file_name = f"{task_type.replace(' ', '_')}_Task_and_Memo_{timestamp}.zip"
+
+                # Create PDFs
+                create_pdf(task_description, response_text, file_name, task_type)
+                create_memo_pdf(answer_key, memo_file_name, task_type)
+
+                st.success("Task and Memo generated successfully!")
+                st.balloons()
+
+                # Read the PDF files for download
+                with open(file_name, "rb") as task_pdf:
+                    task_pdf_data = task_pdf.read()
+
+                with open(memo_file_name, "rb") as memo_pdf:
+                    memo_pdf_data = memo_pdf.read()
+
+                # Individual download buttons
+                st.download_button("📄 Download Task PDF", data=task_pdf_data, file_name=file_name, mime='application/pdf')
+                st.download_button("📄 Download Memo PDF", data=memo_pdf_data, file_name=memo_file_name, mime='application/pdf')
+
+                # Create a ZIP file for both PDFs
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+                    zip_file.writestr(file_name, task_pdf_data)
+                    zip_file.writestr(memo_file_name, memo_pdf_data)
+
+                zip_buffer.seek(0)
+
+                # ZIP download button
+                st.download_button("📁 Download Both PDFs (Task + Memo)", data=zip_buffer, file_name=zip_file_name, mime="application/zip")
 
         except Exception as e:
             st.error(f"An error occurred: {e}")
@@ -585,6 +582,15 @@ def main():
 # Run the app
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
 
 
 
